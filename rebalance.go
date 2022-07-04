@@ -138,16 +138,16 @@ func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendP
 	return result, nil
 }
 
-func (r *Rebalance) getRoute() (*[]glightning.RouteHop, error) {
-	route, err := NewRoute(r.In, r.Out, r.Amount)
+func getRoute(in string, out string, amount uint64, maxppm uint64) (*[]glightning.RouteHop, error) {
+	route, err := NewRoute(in, out, amount)
 	if err != nil {
 		return nil, err
 	}
 	lightningRoute := route.toLightningRoute()
-	if getRoutePPM(*lightningRoute) > r.MaxPPM {
+	if getRoutePPM(*lightningRoute) > maxppm {
 		return nil, errors.New(fmt.Sprintf("route too expensive. "+
 			"Cheapest route found was %d ppm, but max_ppm is %d",
-			getRoutePPM(*lightningRoute)/1000, r.MaxPPM/1000))
+			getRoutePPM(*lightningRoute)/1000, maxppm/1000))
 	}
 	return lightningRoute, nil
 }
@@ -158,7 +158,7 @@ func (r *Rebalance) run() (string, error) {
 	ongoingRebalances[r.PreimageHashPair.Hash] = *r
 
 	log.Println("searching for a route")
-	route, err := r.getRoute()
+	route, err := getRoute(r.In, r.Out, r.Amount, r.MaxPPM)
 	if err != nil {
 		return "", err
 	}

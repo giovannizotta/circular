@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/elementsproject/glightning/glightning"
-	"log"
 	"strconv"
 )
 
@@ -25,7 +24,6 @@ func NewRoute(in string, out string, amount uint64) (*Route, error) {
 		Amount: amount,
 		Hops:   hops,
 	}
-	log.Printf("route: %+v\n", result)
 	return result, nil
 }
 
@@ -33,7 +31,6 @@ func buildPath(in string, out string, amount uint64) ([]string, error) {
 	exclude := excludeEdgesToSelf(out)
 	exclude = append(exclude, excludeEdgesToSelf(in)...)
 
-	log.Printf("exclude: %v+\n", exclude)
 	route, err := lightning.GetRoute(in, amount, 20, 0, out, 5, exclude, 20)
 	if err != nil {
 		return nil, err
@@ -55,6 +52,7 @@ func getDirection(from string, to string) uint8 {
 	return 1
 }
 
+//actually returns satoshi per Billion, not per Million
 func getRoutePPM(route []glightning.RouteHop) uint64 {
 	originalAmount := route[len(route)-1].MilliSatoshi
 	fee := (route[0].MilliSatoshi) - originalAmount
@@ -66,7 +64,6 @@ func computeFee(from string, to string, amount uint64) uint64 {
 	result := baseFee
 	proportionalFee := ((amount / 1000) * graph.Nodes[from][to][0].FeePerMillionth) / 1000
 	result += proportionalFee
-	log.Printf("base fee: %d, proportional fee: %d, result: %d\n", baseFee, proportionalFee, result)
 	return result
 }
 
