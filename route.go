@@ -55,6 +55,12 @@ func getDirection(from string, to string) uint8 {
 	return 1
 }
 
+func getRoutePPM(route []glightning.RouteHop) uint64 {
+	originalAmount := route[len(route)-1].MilliSatoshi
+	fee := (route[0].MilliSatoshi) - originalAmount
+	return (fee * 1000000000) / originalAmount
+}
+
 func computeFee(from string, to string, amount uint64) uint64 {
 	baseFee := graph.Nodes[from][to][0].BaseFeeMillisatoshi
 	result := baseFee
@@ -70,19 +76,6 @@ func excludeEdgesToSelf(node string) []string {
 		result = append(result, channel.ShortChannelId+"/"+strconv.Itoa(i%2))
 	}
 	return result
-}
-
-func (r *Route) SendPay(paymentHash string) (*glightning.SendPayFields, error) {
-	_, err := lightning.SendPayLite(*r.toLightningRoute(), paymentHash)
-	if err != nil {
-		log.Println(err)
-	}
-
-	result, err := lightning.WaitSendPay(paymentHash, 20)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 func addHop(route *[]glightning.RouteHop, hops []string, i int, amount uint64, delay uint) {

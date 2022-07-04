@@ -16,6 +16,7 @@ type Rebalance struct {
 	In               string           `json:"in"`
 	Out              string           `json:"out"`
 	Amount           uint64           `json:"amount"`
+	MaxPPM           uint64           `json:"max_ppm"`
 	PreimageHashPair PreimageHashPair `json:"preimage,omitempty"`
 }
 
@@ -94,7 +95,7 @@ func (r *Rebalance) validateLiquidityParameters() error {
 }
 
 func (r *Rebalance) validateParameters() error {
-	if r.In == "" || r.Out == "" || r.Amount <= 0 {
+	if r.In == "" || r.Out == "" || r.Amount <= 0 || r.MaxPPM < 0 {
 		return errors.New("missing required parameter")
 	}
 	err := r.validatePeerParameters()
@@ -122,27 +123,54 @@ func NewRebalanceResult(result string) *RebalanceResult {
 	}
 }
 
+func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendPayFields, error) {
+	_, err := lightning.SendPayLite(route, paymentHash)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	result, err := lightning.WaitSendPay(paymentHash, 20)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *Rebalance) getRoute() (*[]glightning.RouteHop, error) {
+	route, err := NewRoute(r.In, r.Out, r.Amount)
+	if err != nil {
+		return nil, err
+	}
+	lightningRoute := route.toLightningRoute()
+	if getRoutePPM(*lightningRoute) > r.MaxPPM {
+		return nil, errors.New(fmt.Sprintf("route too expensive. "+
+			"Cheapest route found was %d ppm, but max_ppm is %d",
+			getRoutePPM(*lightningRoute)/1000, r.MaxPPM/1000))
+	}
+	return lightningRoute, nil
+}
+
 func (r *Rebalance) run() (string, error) {
 	log.Println("generating preimage/hash pair")
 	r.PreimageHashPair = *NewPreimageHashPair()
 	ongoingRebalances[r.PreimageHashPair.Hash] = *r
 
-	log.Println("building route")
-	route, err := NewRoute(r.In, r.Out, r.Amount)
+	log.Println("searching for a route")
+	route, err := r.getRoute()
 	if err != nil {
 		return "", err
 	}
 
-	log.Println("sending payment to route")
-	result, err := route.SendPay(r.PreimageHashPair.Hash)
+	log.Println("trying to send payment to route")
+	_, err = sendPay(*route, r.PreimageHashPair.Hash)
 	if err != nil {
 		return "", err
 	}
-
-	log.Printf("payment successful: %+v\n", result)
 	r.clean()
 
-	return fmt.Sprintf("rebalance successful\n"), nil
+	return fmt.Sprintf("rebalance successful at %d ppm\n", getRoutePPM(*route)/1000), nil
 }
 
 func (r *Rebalance) clean() {
@@ -155,7 +183,9 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 	log.Printf("parameters validated, running rebalance\n")
+	//convert to msatoshi
 	r.Amount *= 1000
+	r.MaxPPM *= 1000
 
 	result, err := r.run()
 	if err != nil {
