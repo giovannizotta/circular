@@ -72,7 +72,7 @@ func excludeEdgesToSelf(node string) []string {
 	return result
 }
 
-func (r *Route) sendPay(paymentHash string) (*glightning.SendPayFields, error) {
+func (r *Route) SendPay(paymentHash string) (*glightning.SendPayFields, error) {
 	_, err := lightning.SendPayLite(*r.toLightningRoute(), paymentHash)
 	if err != nil {
 		log.Println(err)
@@ -85,13 +85,13 @@ func (r *Route) sendPay(paymentHash string) (*glightning.SendPayFields, error) {
 	return result, nil
 }
 
-func addHop(route *[]glightning.RouteHop, hops *[]string, i int, amount uint64, delay uint) {
+func addHop(route *[]glightning.RouteHop, hops []string, i int, amount uint64, delay uint) {
 	//TODO: get best channel instead of always using the first one
 	if i < 0 {
 		return
 	}
-	from := (*hops)[i]
-	to := (*hops)[i+1]
+	from := hops[i]
+	to := hops[i+1]
 	routeHop := glightning.RouteHop{
 		Id:             to,
 		ShortChannelId: graph.Nodes[from][to][0].ShortChannelId,
@@ -111,9 +111,8 @@ func reverseRoute(route *[]glightning.RouteHop) {
 }
 
 func (r *Route) toLightningRoute() *[]glightning.RouteHop {
-	//recursive
-	result := new([]glightning.RouteHop)
-	addHop(result, &r.Hops, len(r.Hops)-2, r.Amount, graph.Nodes[r.In][self.Id][0].Delay)
+	result := &[]glightning.RouteHop{}
+	addHop(result, r.Hops, len(r.Hops)-2, r.Amount, graph.Nodes[r.In][self.Id][0].Delay)
 	reverseRoute(result)
 	for i, hop := range *result {
 		log.Printf("hop %d: %+v\n", i, hop)

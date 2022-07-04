@@ -134,7 +134,7 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Println("sending payment to route")
-	result, err := route.sendPay(r.PreimageHashPair.Hash)
+	result, err := route.SendPay(r.PreimageHashPair.Hash)
 	if err != nil {
 		return "", err
 	}
