@@ -13,9 +13,10 @@ const (
 )
 
 type Rebalance struct {
-	In     string `json:"required"`
-	Out    string `json:"required"`
-	Amount uint64 `json:"required"`
+	In               string           `json:"in"`
+	Out              string           `json:"out"`
+	Amount           uint64           `json:"amount"`
+	PreimageHashPair PreimageHashPair `json:"preimage,omitempty"`
 }
 
 func (r *Rebalance) Name() string {
@@ -62,6 +63,9 @@ func (r *Rebalance) validateRebalancePeerParameters() error {
 	if _, ok := graph.Nodes[self.Id][r.Out]; !ok {
 		return errors.New("outgoing node is not a peer")
 	}
+	if len(self.Peers) == 0 {
+		return errors.New("no peers yet")
+	}
 	return nil
 }
 
@@ -72,8 +76,6 @@ func (r *Rebalance) validateRebalanceLiquidityParameters() error {
 	outChannel := getBestChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	})
-	log.Printf("inChannel: %v\n", inChannel)
-	log.Printf("outChannel: %v\n", outChannel)
 	//validate that the channels are in normal state
 	if inChannel.State != NORMAL {
 		return errors.New("incoming channel is not in normal state")
@@ -82,10 +84,10 @@ func (r *Rebalance) validateRebalanceLiquidityParameters() error {
 		return errors.New("outgoing channel is not in normal state")
 	}
 	//validate that the amount is less than the liquidity of the channels
-	if (inChannel.ReceivableMilliSatoshi / 1000) < r.Amount {
+	if (inChannel.ReceivableMilliSatoshi) < r.Amount {
 		return errors.New("incoming channel has insufficient remote balance")
 	}
-	if (outChannel.SpendableMilliSatoshi / 1000) < r.Amount {
+	if (outChannel.SpendableMilliSatoshi) < r.Amount {
 		return errors.New("outgoing channel has insufficient local balance")
 	}
 	return nil
@@ -104,6 +106,7 @@ func (r *Rebalance) validateRebalanceParameters() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -119,11 +122,121 @@ func NewRebalanceResult(result string) *RebalanceResult {
 	}
 }
 
+func getDirection(from string, to string) uint8 {
+	if from < to {
+		return 0
+	}
+	return 1
+}
+
+func (r *Rebalance) computeFirstHopFeeMillisatoshi() uint64 {
+	baseFee := graph.Nodes[self.Id][r.Out][0].BaseFeeMillisatoshi
+	result := baseFee
+	proportionalFee := ((r.Amount / 1000) * graph.Nodes[self.Id][r.Out][0].FeePerMillionth) / 1000
+	result += proportionalFee
+	log.Printf("base fee: %d, proportional fee: %d, result: %d\n", baseFee, proportionalFee, result)
+	return result
+}
+
+func (r *Rebalance) prependHop(route []glightning.RouteHop) []glightning.RouteHop {
+	//FIXME: get the best channel?
+	routeHop := glightning.RouteHop{
+		Id:             r.Out,
+		ShortChannelId: graph.Nodes[self.Id][r.Out][0].ShortChannelId,
+		MilliSatoshi:   route[0].MilliSatoshi + r.computeFirstHopFeeMillisatoshi(),
+		Delay:          route[0].Delay + graph.Nodes[self.Id][r.Out][0].Delay,
+		Direction:      getDirection(self.Id, r.Out),
+	}
+	//prepend the hop to the route
+	route = append([]glightning.RouteHop{routeHop}, route...)
+	return route
+}
+
+func (r *Rebalance) getExcludeList() []string {
+	var result []string
+	var alreadyExcluded map[string]bool
+	alreadyExcluded = make(map[string]bool)
+	for _, channel := range graph.Nodes[self.Id][r.Out] {
+		//exclude direction out -> self
+		candidate := channel.ShortChannelId + "/"
+		if self.Id < r.Out {
+			candidate += "1"
+		} else {
+			candidate += "0"
+		}
+		if _, found := alreadyExcluded[candidate]; !found {
+			result = append(result, candidate)
+		}
+		alreadyExcluded[candidate] = true
+	}
+	return result
+}
+
+func (r *Rebalance) buildRoute() (*[]glightning.RouteHop, error) {
+	exclude := r.getExcludeList()
+
+	route, err := lightning.GetRoute(self.Id, r.Amount, 20, 0, r.Out, 5, exclude, 20)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range route {
+		route[i].AmountMsat = ""
+	}
+
+	route = r.prependHop(route)
+	return &route, nil
+}
+
+func (r *Rebalance) sendPayToRoute(route *[]glightning.RouteHop) (*glightning.SendPayFields, error) {
+	_, err := lightning.SendPayLite(*route, r.PreimageHashPair.Hash)
+	if err != nil {
+		log.Println(err)
+	}
+
+	result, err := lightning.WaitSendPay(r.PreimageHashPair.Hash, 20)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *Rebalance) run() (string, error) {
+	log.Println("building route")
+	route, err := r.buildRoute()
+	if err != nil {
+		return "", err
+	}
+	log.Println("sending payment to route")
+	result, err := r.sendPayToRoute(route)
+	if err != nil {
+		return "", err
+	}
+
+	log.Printf("payment successful: %+v\n", result)
+	r.finish()
+
+	return fmt.Sprintf("rebalance successful\n"), nil
+}
+
+func (r *Rebalance) finish() {
+	delete(ongoingRebalances, r.PreimageHashPair.Hash)
+}
+
 func (r *Rebalance) Call() (jrpc2.Result, error) {
 	err := r.validateRebalanceParameters()
 	if err != nil {
 		return nil, err
 	}
-	return NewRebalanceResult(
-		fmt.Sprintf("Rebalancing:\nin: %s\nout: %s\namount: %d\n", r.In, r.Out, r.Amount)), nil
+	log.Printf("parameters validated, running rebalance\n")
+	r.Amount *= 1000
+
+	r.PreimageHashPair = *NewPreimageHashPair()
+	ongoingRebalances[r.PreimageHashPair.Hash] = r
+
+	result, err := r.run()
+	if err != nil {
+		return nil, err
+	}
+	return NewRebalanceResult(result), nil
 }

@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+circular
 
 # Test binary, built with `go test -c`
 *.test
