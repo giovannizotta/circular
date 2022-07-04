@@ -6,6 +6,7 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 	"log"
+	"strconv"
 )
 
 const (
@@ -138,27 +139,47 @@ func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendP
 	return result, nil
 }
 
-func getRoute(in string, out string, amount uint64, maxppm uint64) (*[]glightning.RouteHop, error) {
-	route, err := NewRoute(in, out, amount)
+// Exclude the edges
+// self <-> in
+// self <-> out
+func (r *Rebalance) excludeEdgesToSelf() []string {
+	var result []string
+	for _, node := range []string{r.In, r.Out} {
+		for i, channel := range graph.Nodes[self.Id][node] {
+			result = append(result, channel.ShortChannelId+"/"+strconv.Itoa(i%2))
+		}
+	}
+	return result
+}
+
+func (r *Rebalance) getRoute() (*[]glightning.RouteHop, error) {
+	exclude := r.excludeEdgesToSelf()
+
+	route, err := NewRoute(r.In, r.Out, r.Amount, exclude)
 	if err != nil {
 		return nil, err
 	}
+	// prepend self.Id to the beginning, and also to the end
+	route.Hops = append([]string{self.Id}, route.Hops...)
+	route.Hops = append(route.Hops, self.Id)
+
 	lightningRoute := route.toLightningRoute()
-	if getRoutePPM(*lightningRoute) > maxppm {
+	if getRoutePPM(*lightningRoute) > r.MaxPPM {
 		return nil, errors.New(fmt.Sprintf("route too expensive. "+
 			"Cheapest route found was %d ppm, but max_ppm is %d",
-			getRoutePPM(*lightningRoute)/1000, maxppm/1000))
+			getRoutePPM(*lightningRoute)/1000, r.MaxPPM/1000))
 	}
 	return lightningRoute, nil
 }
 
 func (r *Rebalance) run() (string, error) {
+	//TODO: save the preimage hash pair in the database
 	log.Println("generating preimage/hash pair")
 	r.PreimageHashPair = *NewPreimageHashPair()
 	ongoingRebalances[r.PreimageHashPair.Hash] = *r
 
 	log.Println("searching for a route")
-	route, err := getRoute(r.In, r.Out, r.Amount, r.MaxPPM)
+	route, err := r.getRoute()
 	if err != nil {
 		return "", err
 	}

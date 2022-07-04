@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/elementsproject/glightning/glightning"
-	"strconv"
 )
 
 type Route struct {
@@ -12,8 +11,8 @@ type Route struct {
 	Hops   []string
 }
 
-func NewRoute(in string, out string, amount uint64) (*Route, error) {
-	hops, err := buildPath(in, out, amount)
+func NewRoute(in string, out string, amount uint64, exclude []string) (*Route, error) {
+	hops, err := buildPath(in, out, amount, exclude)
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +26,7 @@ func NewRoute(in string, out string, amount uint64) (*Route, error) {
 	return result, nil
 }
 
-func buildPath(in string, out string, amount uint64) ([]string, error) {
-	exclude := excludeEdgesToSelf(out)
-	exclude = append(exclude, excludeEdgesToSelf(in)...)
-
+func buildPath(in string, out string, amount uint64, exclude []string) ([]string, error) {
 	route, err := lightning.GetRoute(in, amount, 20, 0, out, 5, exclude, 20)
 	if err != nil {
 		return nil, err
@@ -39,9 +35,8 @@ func buildPath(in string, out string, amount uint64) ([]string, error) {
 	for i := range route {
 		hops = append(hops, route[i].Id)
 	}
+
 	hops = append([]string{out}, hops...)
-	hops = append([]string{self.Id}, hops...)
-	hops = append(hops, self.Id)
 	return hops, nil
 }
 
@@ -67,35 +62,6 @@ func computeFee(from string, to string, amount uint64) uint64 {
 	return result
 }
 
-func excludeEdgesToSelf(node string) []string {
-	var result []string
-	for i, channel := range graph.Nodes[self.Id][node] {
-		result = append(result, channel.ShortChannelId+"/"+strconv.Itoa(i%2))
-	}
-	return result
-}
-
-func addHop(route *[]glightning.RouteHop, hops []string, i int, amount uint64, delay uint) {
-	//TODO: get best channel instead of always using the first one
-	if i < 0 {
-		return
-	}
-	from := hops[i]
-	to := hops[i+1]
-	routeHop := glightning.RouteHop{
-		Id:             to,
-		ShortChannelId: graph.Nodes[from][to][0].ShortChannelId,
-		MilliSatoshi:   amount,
-		Delay:          delay,
-		Direction:      getDirection(from, to),
-	}
-	*route = append(*route, routeHop)
-
-	amount += computeFee(from, to, amount)
-	delay += graph.Nodes[from][to][0].Delay
-	addHop(route, hops, i-1, amount, delay)
-}
-
 func reverseRoute(route []glightning.RouteHop) {
 	for i := 0; i < len(route)/2; i++ {
 		route[i], route[len(route)-i-1] = route[len(route)-i-1], route[i]
@@ -103,8 +69,25 @@ func reverseRoute(route []glightning.RouteHop) {
 }
 
 func (r *Route) toLightningRoute() *[]glightning.RouteHop {
+	//TODO: get best channel instead of always using the first one
 	result := &[]glightning.RouteHop{}
-	addHop(result, r.Hops, len(r.Hops)-2, r.Amount, graph.Nodes[r.In][self.Id][0].Delay)
+	amount := r.Amount
+	lastId := r.Hops[len(r.Hops)-1]
+	delay := graph.Nodes[r.In][lastId][0].Delay
+	for i := len(r.Hops) - 2; i >= 0; i-- {
+		from := r.Hops[i]
+		to := r.Hops[i+1]
+		routeHop := glightning.RouteHop{
+			Id:             to,
+			ShortChannelId: graph.Nodes[from][to][0].ShortChannelId,
+			MilliSatoshi:   amount,
+			Delay:          delay,
+			Direction:      getDirection(from, to),
+		}
+		amount += computeFee(from, to, amount)
+		delay += graph.Nodes[from][to][0].Delay
+		*result = append(*result, routeHop)
+	}
 	reverseRoute(*result)
 	return result
 }

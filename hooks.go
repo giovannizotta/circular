@@ -15,6 +15,7 @@ func OnHtlcAccepted(event *glightning.HtlcAcceptedEvent) (*glightning.HtlcAccept
 	log.Printf("htlc: %+v\n", event.Htlc)
 
 	if r, ok := ongoingRebalances[event.Htlc.PaymentHash]; ok {
+		log.Println("found an htlc which we can resolve")
 		return event.Resolve(r.PreimageHashPair.Preimage), nil
 	}
 
