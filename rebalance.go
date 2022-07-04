@@ -123,6 +123,7 @@ func NewRebalanceResult(result string) *RebalanceResult {
 }
 
 func (r *Rebalance) run() (string, error) {
+	log.Println("generating preimage/hash pair")
 	r.PreimageHashPair = *NewPreimageHashPair()
 	ongoingRebalances[r.PreimageHashPair.Hash] = r
 
@@ -130,14 +131,6 @@ func (r *Rebalance) run() (string, error) {
 	route, err := NewRoute(r.In, r.Out, r.Amount)
 	if err != nil {
 		return "", err
-	}
-
-	route.appendFinalHop(r.In)
-	route.addFirstHopFee()
-	route.prependInitialHop(r.Out)
-
-	for _, hop := range *route.Hops {
-		log.Printf("%+v\n", hop)
 	}
 
 	log.Println("sending payment to route")

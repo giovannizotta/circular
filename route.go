@@ -10,10 +10,26 @@ type Route struct {
 	In     string
 	Out    string
 	Amount uint64
-	Hops   *[]glightning.RouteHop
+	Hops   []string
 }
 
 func NewRoute(in string, out string, amount uint64) (*Route, error) {
+	hops, err := buildPath(in, out, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &Route{
+		In:     in,
+		Out:    out,
+		Amount: amount,
+		Hops:   hops,
+	}
+	log.Printf("route: %+v\n", result)
+	return result, nil
+}
+
+func buildPath(in string, out string, amount uint64) ([]string, error) {
 	exclude := excludeEdgesToSelf(out)
 	exclude = append(exclude, excludeEdgesToSelf(in)...)
 
@@ -22,22 +38,14 @@ func NewRoute(in string, out string, amount uint64) (*Route, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	var hops []string
 	for i := range route {
-		route[i].AmountMsat = ""
+		hops = append(hops, route[i].Id)
 	}
-
-	result := &Route{
-		In:     in,
-		Out:    out,
-		Amount: amount,
-		Hops:   &route,
-	}
-	log.Printf("route: %+v\n", result)
-	for i := range *result.Hops {
-		log.Printf("hop %d: %+v\n", i, (*result.Hops)[i])
-	}
-	return result, nil
+	hops = append([]string{out}, hops...)
+	hops = append([]string{self.Id}, hops...)
+	hops = append(hops, self.Id)
+	return hops, nil
 }
 
 func getDirection(from string, to string) uint8 {
@@ -56,35 +64,6 @@ func computeHopFeeMillisatoshi(from string, to string, amount uint64) uint64 {
 	return result
 }
 
-func (r *Route) prependInitialHop(out string) {
-	//FIXME: get the best channel?
-	routeHop := glightning.RouteHop{
-		Id:             out,
-		ShortChannelId: graph.Nodes[self.Id][out][0].ShortChannelId,
-		MilliSatoshi:   (*r.Hops)[0].MilliSatoshi + computeHopFeeMillisatoshi(self.Id, out, (*r.Hops)[0].MilliSatoshi),
-		Delay:          (*r.Hops)[0].Delay + graph.Nodes[self.Id][out][0].Delay,
-		Direction:      getDirection(self.Id, out),
-	}
-	//prepend the hop to the route
-	*r.Hops = append([]glightning.RouteHop{routeHop}, *r.Hops...)
-}
-
-func (r *Route) appendFinalHop(in string) {
-	last := len(*r.Hops) - 1
-	routeHop := glightning.RouteHop{
-		Id:             self.Id,
-		ShortChannelId: graph.Nodes[in][self.Id][0].ShortChannelId,
-		MilliSatoshi:   (*r.Hops)[last].MilliSatoshi,
-		Delay:          graph.Nodes[in][self.Id][0].Delay,
-		Direction:      getDirection(in, self.Id),
-	}
-	for i := range *r.Hops {
-		(*r.Hops)[i].Delay += graph.Nodes[in][self.Id][0].Delay
-	}
-	*r.Hops = append(*r.Hops, routeHop)
-
-}
-
 func excludeEdgesToSelf(node string) []string {
 	var result []string
 	for i, channel := range graph.Nodes[self.Id][node] {
@@ -93,12 +72,8 @@ func excludeEdgesToSelf(node string) []string {
 	return result
 }
 
-func (r *Route) addFirstHopFee() {
-	(*r.Hops)[0].MilliSatoshi += computeHopFeeMillisatoshi((*r.Hops)[0].Id, (*r.Hops)[1].Id, (*r.Hops)[0].MilliSatoshi)
-}
-
 func (r *Route) sendPay(paymentHash string) (*glightning.SendPayFields, error) {
-	_, err := lightning.SendPayLite(*r.Hops, paymentHash)
+	_, err := lightning.SendPayLite(*r.toLightningRoute(), paymentHash)
 	if err != nil {
 		log.Println(err)
 	}
@@ -108,4 +83,40 @@ func (r *Route) sendPay(paymentHash string) (*glightning.SendPayFields, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func addHop(route *[]glightning.RouteHop, hops *[]string, i int, amount uint64, delay uint) {
+	//TODO: get best channel instead of always using the first one
+	if i < 0 {
+		return
+	}
+	from := (*hops)[i]
+	to := (*hops)[i+1]
+	routeHop := glightning.RouteHop{
+		Id:             to,
+		ShortChannelId: graph.Nodes[from][to][0].ShortChannelId,
+		MilliSatoshi:   amount,
+		Delay:          delay,
+		Direction:      getDirection(from, to),
+	}
+	*route = append(*route, routeHop)
+	fee := computeHopFeeMillisatoshi(from, to, amount)
+	addHop(route, hops, i-1, amount+fee, delay+graph.Nodes[from][to][0].Delay)
+}
+
+func reverseRoute(route *[]glightning.RouteHop) {
+	for i := 0; i < len(*route)/2; i++ {
+		(*route)[i], (*route)[len(*route)-i-1] = (*route)[len(*route)-i-1], (*route)[i]
+	}
+}
+
+func (r *Route) toLightningRoute() *[]glightning.RouteHop {
+	//recursive
+	result := new([]glightning.RouteHop)
+	addHop(result, &r.Hops, len(r.Hops)-2, r.Amount, graph.Nodes[r.In][self.Id][0].Delay)
+	reverseRoute(result)
+	for i, hop := range *result {
+		log.Printf("hop %d: %+v\n", i, hop)
+	}
+	return result
 }
