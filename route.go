@@ -55,7 +55,7 @@ func getDirection(from string, to string) uint8 {
 	return 1
 }
 
-func computeHopFeeMillisatoshi(from string, to string, amount uint64) uint64 {
+func computeFee(from string, to string, amount uint64) uint64 {
 	baseFee := graph.Nodes[from][to][0].BaseFeeMillisatoshi
 	result := baseFee
 	proportionalFee := ((amount / 1000) * graph.Nodes[from][to][0].FeePerMillionth) / 1000
@@ -100,22 +100,21 @@ func addHop(route *[]glightning.RouteHop, hops []string, i int, amount uint64, d
 		Direction:      getDirection(from, to),
 	}
 	*route = append(*route, routeHop)
-	fee := computeHopFeeMillisatoshi(from, to, amount)
-	addHop(route, hops, i-1, amount+fee, delay+graph.Nodes[from][to][0].Delay)
+
+	amount += computeFee(from, to, amount)
+	delay += graph.Nodes[from][to][0].Delay
+	addHop(route, hops, i-1, amount, delay)
 }
 
-func reverseRoute(route *[]glightning.RouteHop) {
-	for i := 0; i < len(*route)/2; i++ {
-		(*route)[i], (*route)[len(*route)-i-1] = (*route)[len(*route)-i-1], (*route)[i]
+func reverseRoute(route []glightning.RouteHop) {
+	for i := 0; i < len(route)/2; i++ {
+		route[i], route[len(route)-i-1] = route[len(route)-i-1], route[i]
 	}
 }
 
 func (r *Route) toLightningRoute() *[]glightning.RouteHop {
 	result := &[]glightning.RouteHop{}
 	addHop(result, r.Hops, len(r.Hops)-2, r.Amount, graph.Nodes[r.In][self.Id][0].Delay)
-	reverseRoute(result)
-	for i, hop := range *result {
-		log.Printf("hop %d: %+v\n", i, hop)
-	}
+	reverseRoute(*result)
 	return result
 }

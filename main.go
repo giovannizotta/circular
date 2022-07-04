@@ -14,7 +14,7 @@ var (
 	plugin            *glightning.Plugin
 	graph             *Graph
 	self              *Self
-	ongoingRebalances map[string]*Rebalance
+	ongoingRebalances map[string]Rebalance
 )
 
 func addCronJob(c *cron.Cron, interval string, f func()) {
@@ -44,7 +44,7 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 		log.Fatalln("error starting lightning: ", err)
 	}
 
-	ongoingRebalances = make(map[string]*Rebalance)
+	ongoingRebalances = make(map[string]Rebalance)
 	self = NewSelf()
 
 	setupCronJobs(options)

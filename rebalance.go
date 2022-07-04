@@ -46,7 +46,7 @@ func getBestChannel(peer string, metric func(channel *glightning.PeerChannel) ui
 	return best
 }
 
-func (r *Rebalance) validateRebalancePeerParameters() error {
+func (r *Rebalance) validatePeerParameters() error {
 	//validate that the nodes are not self
 	if r.In == self.Id || r.Out == self.Id {
 		return errors.New("one of the nodes is self")
@@ -69,7 +69,7 @@ func (r *Rebalance) validateRebalancePeerParameters() error {
 	return nil
 }
 
-func (r *Rebalance) validateRebalanceLiquidityParameters() error {
+func (r *Rebalance) validateLiquidityParameters() error {
 	inChannel := getBestChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	})
@@ -93,16 +93,16 @@ func (r *Rebalance) validateRebalanceLiquidityParameters() error {
 	return nil
 }
 
-func (r *Rebalance) validateRebalanceParameters() error {
+func (r *Rebalance) validateParameters() error {
 	if r.In == "" || r.Out == "" || r.Amount <= 0 {
 		return errors.New("missing required parameter")
 	}
-	err := r.validateRebalancePeerParameters()
+	err := r.validatePeerParameters()
 	if err != nil {
 		return err
 	}
 
-	err = r.validateRebalanceLiquidityParameters()
+	err = r.validateLiquidityParameters()
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func NewRebalanceResult(result string) *RebalanceResult {
 func (r *Rebalance) run() (string, error) {
 	log.Println("generating preimage/hash pair")
 	r.PreimageHashPair = *NewPreimageHashPair()
-	ongoingRebalances[r.PreimageHashPair.Hash] = r
+	ongoingRebalances[r.PreimageHashPair.Hash] = *r
 
 	log.Println("building route")
 	route, err := NewRoute(r.In, r.Out, r.Amount)
@@ -140,17 +140,17 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Printf("payment successful: %+v\n", result)
-	r.finish()
+	r.clean()
 
 	return fmt.Sprintf("rebalance successful\n"), nil
 }
 
-func (r *Rebalance) finish() {
+func (r *Rebalance) clean() {
 	delete(ongoingRebalances, r.PreimageHashPair.Hash)
 }
 
 func (r *Rebalance) Call() (jrpc2.Result, error) {
-	err := r.validateRebalanceParameters()
+	err := r.validateParameters()
 	if err != nil {
 		return nil, err
 	}
