@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/elementsproject/glightning/glightning"
-	"github.com/robfig/cron/v3"
 	"log"
 )
 
@@ -22,7 +21,8 @@ func NewSelf() *Self {
 	return result
 }
 
-func refreshPeers() map[string]*glightning.Peer {
+func RefreshPeers() map[string]*glightning.Peer {
+	log.Println("refreshing peers")
 	newPeers := make(map[string]*glightning.Peer)
 	peers, err := lightning.ListPeers()
 	if err != nil {
@@ -32,15 +32,6 @@ func refreshPeers() map[string]*glightning.Peer {
 		newPeers[peer.Id] = peer
 	}
 	return newPeers
-}
-
-func (s *Self) SetRecurrentPeersRefresh(c *cron.Cron, peerRefresh string) {
-	_, err := c.AddFunc("@every "+peerRefresh, func() {
-		s.Peers = refreshPeers()
-	})
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
 }
 
 func getId() string {

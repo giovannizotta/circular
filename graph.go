@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/elementsproject/glightning/glightning"
-	"github.com/robfig/cron/v3"
 	"log"
 )
 
@@ -52,13 +51,4 @@ func RefreshGraph() *Graph {
 		newGraph.addChannel(c)
 	}
 	return newGraph
-}
-
-func SetRecurrentGraphRefresh(c *cron.Cron, graphRefresh string) {
-	_, err := c.AddFunc("@every "+graphRefresh, func() {
-		graph = RefreshGraph()
-	})
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
 }
