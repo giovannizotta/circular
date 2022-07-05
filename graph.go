@@ -14,24 +14,43 @@ type Channel struct {
 	Liquidity uint64
 }
 
+func (c *Channel) computeFee(amount uint64) uint64 {
+	baseFee := c.BaseFeeMillisatoshi
+	result := baseFee
+	proportionalFee := ((amount / 1000) * c.FeePerMillionth) / 1000
+	result += proportionalFee
+	return result
+}
+
+// ShortChannelId -> Channel
+type Edge map[string]Channel
+
+// id -> id -> Edges
 type Graph struct {
-	//map from nodeId to map of channels of that node
-	Nodes map[string]map[string][]*Channel
+	Outbound map[string]map[string]Edge
+	Inbound  map[string]map[string]Edge
+}
+
+func allocate(links *map[string]map[string]Edge, from, to string) {
+	if *links == nil {
+		*links = make(map[string]map[string]Edge)
+	}
+	if (*links)[from] == nil {
+		(*links)[from] = make(map[string]Edge)
+	}
+	if (*links)[from][to] == nil {
+		(*links)[from][to] = make(Edge)
+	}
 }
 
 func (g *Graph) addChannel(c *glightning.Channel) {
-	if g.Nodes == nil {
-		g.Nodes = make(map[string]map[string][]*Channel)
-	}
-	if g.Nodes[c.Source] == nil {
-		g.Nodes[c.Source] = make(map[string][]*Channel)
-	}
-	if g.Nodes[c.Destination] == nil {
-		g.Nodes[c.Destination] = make(map[string][]*Channel)
-	}
+	allocate(&g.Outbound, c.Source, c.Destination)
+	allocate(&g.Inbound, c.Destination, c.Source)
 	liquidity := estimateInitialLiquidity(c)
-	g.Nodes[c.Source][c.Destination] = append(g.Nodes[c.Source][c.Destination], &Channel{*c, liquidity})
-	g.Nodes[c.Destination][c.Source] = append(g.Nodes[c.Destination][c.Source], &Channel{*c, liquidity})
+	g.Outbound[c.Source][c.Destination][c.ShortChannelId] =
+		Channel{*c, liquidity}
+	g.Inbound[c.Destination][c.Source][c.ShortChannelId] =
+		Channel{*c, c.Satoshis - liquidity}
 }
 
 func estimateInitialLiquidity(c *glightning.Channel) uint64 {

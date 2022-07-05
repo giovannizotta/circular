@@ -6,7 +6,6 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 	"log"
-	"strconv"
 )
 
 const (
@@ -37,7 +36,7 @@ func getPeerChannels(id string) []*glightning.PeerChannel {
 	return peer.Channels
 }
 
-func getBestChannel(peer string, metric func(channel *glightning.PeerChannel) uint64) *glightning.PeerChannel {
+func getBestPeerChannel(peer string, metric func(channel *glightning.PeerChannel) uint64) *glightning.PeerChannel {
 	channels := getPeerChannels(peer)
 	best := channels[0]
 	for _, channel := range channels {
@@ -57,13 +56,13 @@ func (r *Rebalance) validatePeerParameters() error {
 	if r.In == r.Out {
 		return errors.New("incoming and outgoing nodes are the same")
 	}
-	//validate that the r.In is a neighbor of self
-	if _, ok := graph.Nodes[self.Id][r.In]; !ok {
-		return errors.New("incoming node is not a peer")
+	//validate that the r.Destination is a neighbor of self
+	if _, ok := graph.Outbound[self.Id][r.In]; !ok {
+		return errors.New("incoming value is not a peer")
 	}
-	//validate r.Out is in graph.Nodes[self]
-	if _, ok := graph.Nodes[self.Id][r.Out]; !ok {
-		return errors.New("outgoing node is not a peer")
+	//validate r.Source is in graph.Outbound[self]
+	if _, ok := graph.Outbound[self.Id][r.Out]; !ok {
+		return errors.New("outgoing value is not a peer")
 	}
 	if len(self.Peers) == 0 {
 		return errors.New("no peers yet")
@@ -72,10 +71,10 @@ func (r *Rebalance) validatePeerParameters() error {
 }
 
 func (r *Rebalance) validateLiquidityParameters() error {
-	inChannel := getBestChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+	inChannel := getBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	})
-	outChannel := getBestChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
+	outChannel := getBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	})
 	//validate that the channels are in normal state
@@ -139,37 +138,26 @@ func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendP
 	return result, nil
 }
 
-// Exclude the edges
-// self <-> in
-// self <-> out
-func (r *Rebalance) excludeEdgesToSelf() []string {
-	var result []string
-	for _, node := range []string{r.In, r.Out} {
-		for i, channel := range graph.Nodes[self.Id][node] {
-			result = append(result, channel.ShortChannelId+"/"+strconv.Itoa(i%2))
-		}
-	}
-	return result
-}
-
-func (r *Rebalance) getRoute() (*[]glightning.RouteHop, error) {
-	exclude := r.excludeEdgesToSelf()
-
-	route, err := NewRoute(r.In, r.Out, r.Amount, exclude)
+func (r *Rebalance) getRoute() (*Route, error) {
+	//exclude := r.excludeEdgesToSelf()
+	route, err := NewRoute(r.In, r.Out, r.Amount, []string{self.Id})
 	if err != nil {
 		return nil, err
 	}
-	// prepend self.Id to the beginning, and also to the end
-	route.Hops = append([]string{self.Id}, route.Hops...)
-	route.Hops = append(route.Hops, self.Id)
 
-	lightningRoute := route.toLightningRoute()
-	if getRoutePPM(*lightningRoute) > r.MaxPPM {
+	// prepend self.Id to the beginning and to the end
+	route.prependHop(self.Id)
+	route.appendHop(self.Id)
+	for i, hop := range route.Hops {
+		log.Printf("hop %d: %+v\n", i, hop)
+	}
+
+	if route.FeePPM > r.MaxPPM {
 		return nil, errors.New(fmt.Sprintf("route too expensive. "+
 			"Cheapest route found was %d ppm, but max_ppm is %d",
-			getRoutePPM(*lightningRoute)/1000, r.MaxPPM/1000))
+			route.FeePPM/1000, r.MaxPPM/1000))
 	}
-	return lightningRoute, nil
+	return route, nil
 }
 
 func (r *Rebalance) run() (string, error) {
@@ -185,17 +173,14 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Println("trying to send payment to route")
-	_, err = sendPay(*route, r.PreimageHashPair.Hash)
+	_, err = sendPay(route.Hops, r.PreimageHashPair.Hash)
 	if err != nil {
 		return "", err
 	}
 	r.clean()
 
-	return fmt.Sprintf("rebalance successful at %d ppm\n", getRoutePPM(*route)/1000), nil
-}
-
-func (r *Rebalance) clean() {
-	delete(ongoingRebalances, r.PreimageHashPair.Hash)
+	//TODO: after successful rebalance, refresh channel balances
+	return fmt.Sprintf("rebalance successful at %d ppm\n", route.FeePPM/1000), nil
 }
 
 func (r *Rebalance) Call() (jrpc2.Result, error) {
@@ -213,4 +198,8 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 	return NewRebalanceResult(result), nil
+}
+
+func (r *Rebalance) clean() {
+	delete(ongoingRebalances, r.PreimageHashPair.Hash)
 }
