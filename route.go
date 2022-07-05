@@ -7,6 +7,10 @@ import (
 	"log"
 )
 
+const (
+	DELAY = 6
+)
+
 type Route struct {
 	Destination string
 	Source      string
@@ -73,6 +77,9 @@ func getRoute(src, dst string, amount uint64, exclude map[string]bool) ([]glight
 				continue
 			}
 			for scid, channel := range edge {
+				if !channel.canUse(amount) {
+					continue
+				}
 				channelFee := int(channel.computeFee(amount))
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
@@ -143,13 +150,13 @@ func (r *Route) appendHop(id string) {
 		Id:             id,
 		ShortChannelId: channel.ShortChannelId,
 		MilliSatoshi:   r.Amount,
-		Delay:          0,
+		Delay:          DELAY,
 		Direction:      getDirection(r.Destination, id),
 	}
 	r.Hops = append(r.Hops, hop)
 	//now add lastHopFee and lastHopDelay
 	r.recomputeFee(channel.computeFee(lastHop.MilliSatoshi))
-	r.recomputeDelay(channel.Delay)
+	r.recomputeDelay(DELAY + channel.Delay)
 }
 
 func (r *Route) prependHop(id string) {

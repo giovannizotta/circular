@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/elementsproject/glightning/glightning"
 	"log"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -20,6 +22,25 @@ func (c *Channel) computeFee(amount uint64) uint64 {
 	proportionalFee := ((amount / 1000) * c.FeePerMillionth) / 1000
 	result += proportionalFee
 	return result
+}
+
+func all(v []bool) bool {
+	for _, b := range v {
+		if !b {
+			return false
+		}
+	}
+	return true
+}
+
+func (c *Channel) canUse(amount uint64) bool {
+	maxHtlcMillisat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+	conditions := []bool{
+		c.Liquidity >= amount,
+		c.IsActive,
+		maxHtlcMillisat >= amount,
+	}
+	return all(conditions)
 }
 
 // ShortChannelId -> Channel
@@ -54,7 +75,7 @@ func (g *Graph) addChannel(c *glightning.Channel) {
 }
 
 func estimateInitialLiquidity(c *glightning.Channel) uint64 {
-	return uint64(0.5 * float64(c.Satoshis))
+	return uint64(0.5 * float64(c.Satoshis*1000))
 }
 
 func RefreshGraph() *Graph {
