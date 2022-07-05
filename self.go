@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PEER_REFRESH = "10s"
+	PEER_REFRESH = "1m"
 )
 
 type Self struct {

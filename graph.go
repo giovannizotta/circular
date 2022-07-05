@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	GRAPH_REFRESH = "5s"
+	GRAPH_REFRESH = "10m"
 )
 
 type Channel struct {
@@ -79,6 +79,7 @@ func estimateInitialLiquidity(c *glightning.Channel) uint64 {
 }
 
 func RefreshGraph() *Graph {
+	//TODO: persistency
 	log.Println("refreshing graph")
 	newGraph := &Graph{}
 

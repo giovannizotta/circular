@@ -130,6 +130,7 @@ func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendP
 		return nil, err
 	}
 
+	//TODO: learn from failed payments
 	result, err := lightning.WaitSendPay(paymentHash, 20)
 	if err != nil {
 		log.Println(err)
