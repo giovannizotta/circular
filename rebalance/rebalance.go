@@ -1,6 +1,8 @@
-package main
+package rebalance
 
 import (
+	"circular/graph"
+	"circular/node"
 	"errors"
 	"fmt"
 	"github.com/elementsproject/glightning/glightning"
@@ -18,6 +20,7 @@ type Rebalance struct {
 	Amount           uint64           `json:"amount"`
 	MaxPPM           uint64           `json:"max_ppm"`
 	PreimageHashPair PreimageHashPair `json:"preimage,omitempty"`
+	Self             *node.Self       `json:"self,omitempty"`
 }
 
 func (r *Rebalance) Name() string {
@@ -28,53 +31,52 @@ func (r *Rebalance) New() interface{} {
 	return &Rebalance{}
 }
 
-func getPeerChannels(id string) []*glightning.PeerChannel {
-	peer, err := lightning.GetPeer(id)
-	if err != nil {
-		log.Fatalln(err)
+func (r *Rebalance) Call() (jrpc2.Result, error) {
+	log.Println("rebalance called")
+	r.Self = node.GetSelf()
+	if err := r.validateParameters(); err != nil {
+		return nil, err
 	}
-	return peer.Channels
-}
 
-func getBestPeerChannel(peer string, metric func(channel *glightning.PeerChannel) uint64) *glightning.PeerChannel {
-	channels := getPeerChannels(peer)
-	best := channels[0]
-	for _, channel := range channels {
-		if metric(channel) > metric(best) {
-			best = channel
-		}
+	log.Printf("parameters validated, running rebalance\n")
+	//convert to msatoshi
+	r.Amount *= 1000
+	r.MaxPPM *= 1000
+
+	result, err := r.run()
+	if err != nil {
+		return nil, err
 	}
-	return best
+	return NewResult(result), nil
 }
 
 func (r *Rebalance) validatePeerParameters() error {
 	//validate that the nodes are not self
-	if r.In == self.Id || r.Out == self.Id {
+	if r.In == r.Self.Id || r.Out == r.Self.Id {
 		return errors.New("one of the nodes is self")
 	}
 	//validate that the nodes are not the same
 	if r.In == r.Out {
 		return errors.New("incoming and outgoing nodes are the same")
 	}
-	//validate that the r.Destination is a neighbor of self
-	if _, ok := graph.Outbound[self.Id][r.In]; !ok {
+	if len(r.Self.Peers) == 0 {
+		return errors.New("no peers yet")
+	}
+	//validate that In and Out are peers
+	if !r.Self.HasPeer(r.In) {
 		return errors.New("incoming value is not a peer")
 	}
-	//validate r.Source is in graph.Outbound[self]
-	if _, ok := graph.Outbound[self.Id][r.Out]; !ok {
+	if !r.Self.HasPeer(r.Out) {
 		return errors.New("outgoing value is not a peer")
-	}
-	if len(self.Peers) == 0 {
-		return errors.New("no peers yet")
 	}
 	return nil
 }
 
 func (r *Rebalance) validateLiquidityParameters() error {
-	inChannel := getBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+	inChannel := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	})
-	outChannel := getBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
+	outChannel := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	})
 	//validate that the channels are in normal state
@@ -111,53 +113,34 @@ func (r *Rebalance) validateParameters() error {
 	return nil
 }
 
-type RebalanceResult struct {
-	Result     string `json:"rebalance"`
-	FormatHint string `json:"format-hint,omitempty"`
-}
-
-func NewRebalanceResult(result string) *RebalanceResult {
-	return &RebalanceResult{
-		Result:     result,
-		FormatHint: glightning.FormatSimple,
-	}
-}
-
-func sendPay(route []glightning.RouteHop, paymentHash string) (*glightning.SendPayFields, error) {
-	_, err := lightning.SendPayLite(route, paymentHash)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	//TODO: learn from failed payments
-	result, err := lightning.WaitSendPay(paymentHash, 20)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return result, nil
-}
-
-func (r *Rebalance) getRoute() (*Route, error) {
-	//exclude := r.excludeEdgesToSelf()
-	route, err := NewRoute(r.In, r.Out, r.Amount, []string{self.Id})
+func (r *Rebalance) getRoute() (*graph.Route, error) {
+	route, err := graph.NewRoute(r.Self.Graph, r.In, r.Out, r.Amount, []string{r.Self.Id})
 	if err != nil {
 		return nil, err
 	}
 
-	// prepend self.Id to the beginning and to the end
-	route.prependHop(self.Id)
-	route.appendHop(self.Id)
+	// prepend self to the route
+	bestOutgoingScid := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
+		return channel.ReceivableMilliSatoshi
+	}).ShortChannelId
+	route.PrependHop(r.Self.Id, bestOutgoingScid)
+
+	// append self to the route
+	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+		return channel.SpendableMilliSatoshi
+	}).ShortChannelId
+	route.AppendHop(r.Self.Id, bestIncomingScid)
+
 	for i, hop := range route.Hops {
 		log.Printf("hop %d: %+v\n", i, hop)
 	}
 
 	if route.FeePPM > r.MaxPPM {
-		return nil, errors.New(fmt.Sprintf("route too expensive. "+
-			"Cheapest route found was %d ppm, but max_ppm is %d",
+		return nil, errors.New(fmt.Sprintf("graph too expensive. "+
+			"Cheapest graph found was %d ppm, but max_ppm is %d",
 			route.FeePPM/1000, r.MaxPPM/1000))
 	}
+
 	return route, nil
 }
 
@@ -165,7 +148,7 @@ func (r *Rebalance) run() (string, error) {
 	//TODO: save the preimage hash pair in the database
 	log.Println("generating preimage/hash pair")
 	r.PreimageHashPair = *NewPreimageHashPair()
-	ongoingRebalances[r.PreimageHashPair.Hash] = *r
+	r.Self.OngoingRebalances[r.PreimageHashPair.Hash] = r.PreimageHashPair.Preimage
 
 	log.Println("searching for a route")
 	route, err := r.getRoute()
@@ -174,33 +157,11 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Println("trying to send payment to route")
-	_, err = sendPay(route.Hops, r.PreimageHashPair.Hash)
+	_, err = r.Self.SendPay(route, r.PreimageHashPair.Hash)
 	if err != nil {
 		return "", err
 	}
-	r.clean()
 
-	//TODO: after successful rebalance, refresh channel balances
+	// TODO: after successful rebalance, clean DB and refresh channel balances
 	return fmt.Sprintf("rebalance successful at %d ppm\n", route.FeePPM/1000), nil
-}
-
-func (r *Rebalance) Call() (jrpc2.Result, error) {
-	err := r.validateParameters()
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("parameters validated, running rebalance\n")
-	//convert to msatoshi
-	r.Amount *= 1000
-	r.MaxPPM *= 1000
-
-	result, err := r.run()
-	if err != nil {
-		return nil, err
-	}
-	return NewRebalanceResult(result), nil
-}
-
-func (r *Rebalance) clean() {
-	delete(ongoingRebalances, r.PreimageHashPair.Hash)
 }

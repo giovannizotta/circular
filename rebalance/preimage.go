@@ -1,4 +1,4 @@
-package main
+package rebalance
 
 import (
 	"crypto/sha256"

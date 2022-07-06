@@ -1,4 +1,4 @@
-package main
+package graph
 
 import (
 	"container/heap"
@@ -12,6 +12,7 @@ const (
 )
 
 type Route struct {
+	graph       *Graph
 	Destination string
 	Source      string
 	Amount      uint64
@@ -20,18 +21,19 @@ type Route struct {
 	Hops        []glightning.RouteHop
 }
 
-func NewRoute(in string, out string, amount uint64, exclude []string) (*Route, error) {
+func NewRoute(graph *Graph, in string, out string, amount uint64, exclude []string) (*Route, error) {
 	excludeMap := make(map[string]bool)
 	for _, v := range exclude {
 		excludeMap[v] = true
 	}
 
-	hops, err := getRoute(out, in, amount, excludeMap)
+	hops, err := getRoute(graph, out, in, amount, excludeMap)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Route{
+		graph:       graph,
 		Destination: in,
 		Source:      out,
 		Amount:      amount,
@@ -41,7 +43,7 @@ func NewRoute(in string, out string, amount uint64, exclude []string) (*Route, e
 	}, nil
 }
 
-func getRoute(src, dst string, amount uint64, exclude map[string]bool) ([]glightning.RouteHop, error) {
+func getRoute(graph *Graph, src, dst string, amount uint64, exclude map[string]bool) ([]glightning.RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	src, dst = dst, src
 	distance := make(map[string]int)
@@ -72,7 +74,7 @@ func getRoute(src, dst string, amount uint64, exclude map[string]bool) ([]glight
 		if fee > distance[u] {
 			continue
 		}
-		for v, edge := range graph.Inbound[u] {
+		for v, edge := range (graph.Inbound)[u] {
 			if exclude[v] {
 				continue
 			}
@@ -101,7 +103,7 @@ func getRoute(src, dst string, amount uint64, exclude map[string]bool) ([]glight
 		}
 	}
 	if distance[dst] == maxDistance {
-		return nil, errors.New("no route found")
+		return nil, errors.New("no graph found")
 	}
 	// now we have the parent map, we can build the hops
 	hops := make([]glightning.RouteHop, 0, 10)
@@ -139,12 +141,9 @@ func (r *Route) recomputeFee(lastHopFee uint64) {
 	r.FeePPM = (r.Fee * 1000000000) / r.Amount
 }
 
-func (r *Route) appendHop(id string) {
+func (r *Route) AppendHop(id, scid string) {
 	lastHop := r.Hops[len(r.Hops)-1]
-	bestScid := getBestPeerChannel(r.Destination, func(channel *glightning.PeerChannel) uint64 {
-		return channel.ReceivableMilliSatoshi
-	}).ShortChannelId
-	channel := graph.Outbound[r.Destination][id][bestScid]
+	channel := r.graph.Outbound[r.Destination][id][scid]
 
 	hop := glightning.RouteHop{
 		Id:             id,
@@ -159,13 +158,10 @@ func (r *Route) appendHop(id string) {
 	r.recomputeDelay(DELAY + channel.Delay)
 }
 
-func (r *Route) prependHop(id string) {
+func (r *Route) PrependHop(id, scid string) {
 	firstHop := r.Hops[0]
-	bestScid := getBestPeerChannel(r.Source, func(channel *glightning.PeerChannel) uint64 {
-		return channel.SpendableMilliSatoshi
-	}).ShortChannelId
-	channel := graph.Outbound[id][r.Source][bestScid]
-	outToFirstHop := graph.Outbound[r.Source][firstHop.Id][firstHop.ShortChannelId]
+	channel := r.graph.Outbound[id][r.Source][scid]
+	outToFirstHop := r.graph.Outbound[r.Source][firstHop.Id][firstHop.ShortChannelId]
 
 	hop := glightning.RouteHop{
 		Id:             r.Source,
