@@ -77,7 +77,7 @@ func (s *Self) refreshGraph() {
 	s.Graph.Outbound = newGraph.Outbound
 }
 
-func (s *Self) GetBestPeerChannel(id string, metric func(channel *glightning.PeerChannel) uint64) *glightning.PeerChannel {
+func (s *Self) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
 	channels := s.Peers[id].Channels
 	best := channels[0]
 	for _, channel := range channels {
