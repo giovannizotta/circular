@@ -117,7 +117,7 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 	exclude := make(map[string]bool)
 	exclude[r.Self.Id] = true
 
-	route, err := r.Self.Graph.GetRoute(r.In, r.Out, r.Amount, exclude)
+	route, err := r.Self.Graph.GetRoute(r.Out, r.In, r.Amount, exclude)
 	if err != nil {
 		return nil, err
 	}
@@ -127,26 +127,27 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 		return channel.ReceivableMilliSatoshi
 	}).ShortChannelId
 	outgoingChannel := r.Self.Graph.Outbound[r.Self.Id][r.Out][bestOutgoingScid]
+
 	//TODO: refactor
 	firstHop := route.Hops[0]
 	firstHopChannel := r.Self.Graph.Outbound[r.Out][firstHop.Id][firstHop.ShortChannelId]
-	route.PrependHop(r.Self.Id, &outgoingChannel, &firstHopChannel)
+	route.PrependHop(&outgoingChannel, &firstHopChannel)
 
 	// append self to the route
 	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	}).ShortChannelId
 	incomingChannel := r.Self.Graph.Outbound[r.In][r.Self.Id][bestIncomingScid]
-	route.AppendHop(r.Self.Id, &incomingChannel)
+	route.AppendHop(&incomingChannel)
 
 	for i, hop := range route.Hops {
 		log.Printf("hop %d: %+v\n", i, hop)
 	}
 
-	if route.FeePPM > r.MaxPPM {
+	if route.FeePPM() > r.MaxPPM {
 		return nil, errors.New(fmt.Sprintf("graph too expensive. "+
 			"Cheapest graph found was %d ppm, but max_ppm is %d",
-			route.FeePPM/1000, r.MaxPPM/1000))
+			route.FeePPM()/1000, r.MaxPPM/1000))
 	}
 
 	return route, nil
@@ -171,5 +172,5 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	// TODO: after successful rebalance, clean DB and refresh channel balances
-	return fmt.Sprintf("rebalance successful at %d ppm\n", route.FeePPM/1000), nil
+	return fmt.Sprintf("rebalance successful at %d ppm\n", route.FeePPM()/1000), nil
 }

@@ -77,6 +77,7 @@ func (s *Self) refreshGraph() {
 	s.Graph.Outbound = newGraph.Outbound
 }
 
+//TODO: account for direction
 func (s *Self) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
 	channels := s.Peers[id].Channels
 	best := channels[0]

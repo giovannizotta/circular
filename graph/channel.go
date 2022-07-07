@@ -28,6 +28,23 @@ func all(v []bool) bool {
 	return true
 }
 
+func (c *Channel) GetHop(amount uint64, delay uint) glightning.RouteHop {
+	return glightning.RouteHop{
+		Id:             c.Destination,
+		ShortChannelId: c.ShortChannelId,
+		MilliSatoshi:   amount,
+		Delay:          delay,
+		Direction:      c.GetDirection(),
+	}
+}
+
+func (c *Channel) GetDirection() uint8 {
+	if c.Source < c.Destination {
+		return 0
+	}
+	return 1
+}
+
 func (c *Channel) canUse(amount uint64) bool {
 	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
 	conditions := []bool{
