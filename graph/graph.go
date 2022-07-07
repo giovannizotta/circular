@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"errors"
 	"github.com/elementsproject/glightning/glightning"
-	"log"
 )
 
 const (
@@ -73,7 +72,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	distance[dst] = 0
 
 	pq := make(PriorityQueue, 1, 16)
-	// Insert source and give it a priority of 0
+	// Insert destination
 	pq[0] = &Item{value: &PqItem{
 		Node:   dst,
 		Amount: amount,
@@ -110,7 +109,6 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 						amount,
 						delay,
 					}
-					log.Printf("new best hop[%s] = %+v\n", v, hop[v])
 					heap.Push(&pq, &Item{value: &PqItem{
 						Node:   v,
 						Amount: amount + uint64(channelFee),
@@ -125,7 +123,6 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	}
 	// now we have the hop map, we can build the hops
 	hops := make([]RouteHop, 0, 10)
-	log.Printf("hop[%s] = %+v\n", src, hop[src].Channel)
 	for u := src; u != dst; u = hop[u].Channel.Destination {
 		hops = append(hops, hop[u])
 	}

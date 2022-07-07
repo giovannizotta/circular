@@ -46,28 +46,32 @@ func (r *Route) addFee(fee uint64, upTo int) {
 	}
 }
 
-func (r *Route) Prepend(channel *Channel) {
-	nextHop := r.Hops[0]
-	newHop := RouteHop{
-		Channel:      channel,
-		MilliSatoshi: nextHop.MilliSatoshi,
-		Delay:        nextHop.Delay,
-	}
-	r.Hops = append([]RouteHop{newHop}, r.Hops...)
-	r.addFee(channel.computeFee(nextHop.MilliSatoshi), 1)
-	r.addDelay(channel.Delay, 1)
-}
-
-func (r *Route) Append(channel *Channel) {
-	lastHop := r.Hops[len(r.Hops)-1]
+func getNewHop(channel *Channel, lastHop RouteHop) RouteHop {
 	newHop := RouteHop{
 		Channel:      channel,
 		MilliSatoshi: lastHop.MilliSatoshi,
 		Delay:        lastHop.Delay,
 	}
-	r.Hops = append(r.Hops, newHop)
-	r.addFee(channel.computeFee(lastHop.MilliSatoshi), len(r.Hops)-1)
-	r.addDelay(channel.Delay, len(r.Hops)-1)
+	return newHop
+}
+
+func (r *Route) add(channel *Channel, where int, f func(hop RouteHop) []RouteHop) {
+	targetHop := r.Hops[where]
+	r.Hops = f(getNewHop(channel, targetHop))
+	r.addFee(channel.computeFee(targetHop.MilliSatoshi), where+1)
+	r.addDelay(channel.Delay, where+1)
+}
+
+func (r *Route) Prepend(channel *Channel) {
+	r.add(channel, 0, func(hop RouteHop) []RouteHop {
+		return append([]RouteHop{hop}, r.Hops...)
+	})
+}
+
+func (r *Route) Append(channel *Channel) {
+	r.add(channel, len(r.Hops)-1, func(hop RouteHop) []RouteHop {
+		return append(r.Hops, hop)
+	})
 }
 
 func (r *Route) ToLightningRoute() []glightning.RouteHop {
