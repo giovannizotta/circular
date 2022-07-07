@@ -10,7 +10,7 @@ type DB struct {
 }
 
 func NewDB(path string) *DB {
-	database, err := badger.Open(badger.DefaultOptions(path + "/db"))
+	database, err := badger.Open(badger.DefaultOptions(path))
 	if err != nil {
 		log.Fatalf("Error opening database: %v\n", err)
 	}
@@ -29,10 +29,10 @@ func (d *DB) Set(secret PreimageHashPair) error {
 	return nil
 }
 
-func (d *DB) Get(hash string) (string, error) {
-	var preimage string
+func (d *DB) Get(key string) (string, error) {
+	var value string
 	err := d.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(hash))
+		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return err
 		}
@@ -40,13 +40,13 @@ func (d *DB) Get(hash string) (string, error) {
 		if err != nil {
 			return err
 		}
-		preimage = string(result)
+		value = string(result)
 		return nil
 	})
 	if err != nil {
 		return "", err
 	}
-	return preimage, nil
+	return value, nil
 }
 
 func (d *DB) PrintAllPreimageHashPairs() error {

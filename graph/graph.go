@@ -43,7 +43,7 @@ func (g *Graph) AddChannel(c *glightning.Channel) {
 	(g.Outbound)[c.Source][c.Destination][c.ShortChannelId] =
 		&Channel{*c, liquidity}
 	(g.Inbound)[c.Destination][c.Source][c.ShortChannelId] =
-		&Channel{*c, c.Satoshis - liquidity}
+		&Channel{*c, (c.Satoshis * 1000) - liquidity}
 }
 
 func estimateInitialLiquidity(c *glightning.Channel) uint64 {
