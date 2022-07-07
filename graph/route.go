@@ -28,30 +28,32 @@ func (r *Route) FeePPM() uint64 {
 	return (r.Fee() * 1000000000) / r.Amount
 }
 
-func (r *Route) addDelay(lastHopDelay uint) {
-	for i := 0; i < len(r.Hops)-1; i++ {
-		r.Hops[i].Delay += lastHopDelay
+func (r *Route) addDelay(delay uint, upTo int) {
+	for i := 0; i < upTo; i++ {
+		r.Hops[i].Delay += delay
 	}
 }
 
-func (r *Route) addFee(lastHopFee uint64) {
-	for i := 0; i < len(r.Hops)-1; i++ {
-		r.Hops[i].MilliSatoshi += lastHopFee
+func (r *Route) addFee(fee uint64, upTo int) {
+	for i := 0; i < upTo; i++ {
+		r.Hops[i].MilliSatoshi += fee
 	}
 }
 
 func (r *Route) AppendHop(channel *Channel) {
-	lastHop := r.Hops[len(r.Hops)-1]
-	r.Hops = append(r.Hops, channel.GetHop(r.Amount, 0))
+	n := len(r.Hops) - 1
+	hop := r.Hops[n]
+	r.Hops = append(r.Hops, channel.GetHop(hop.MilliSatoshi, hop.Delay))
 
-	r.addFee(channel.computeFee(lastHop.MilliSatoshi))
-	r.addDelay(channel.Delay)
+	r.addFee(channel.computeFee(hop.MilliSatoshi), n+1)
+	r.addDelay(channel.Delay, n+1)
 }
 
 func (r *Route) PrependHop(channel *Channel, firstHopChannel *Channel) {
-	firstHop := r.Hops[0]
-	r.Hops = append([]glightning.RouteHop{channel.GetHop(firstHop.MilliSatoshi, firstHop.Delay)}, r.Hops...)
+	n := 0
+	hop := r.Hops[n]
+	r.Hops = append([]glightning.RouteHop{channel.GetHop(hop.MilliSatoshi, hop.Delay)}, r.Hops...)
 
-	r.addFee(firstHopChannel.computeFee(firstHop.MilliSatoshi))
-	r.addDelay(channel.Delay)
+	r.addFee(firstHopChannel.computeFee(hop.MilliSatoshi), n+1)
+	r.addDelay(channel.Delay, n+1)
 }

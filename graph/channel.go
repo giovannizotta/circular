@@ -34,11 +34,11 @@ func (c *Channel) GetHop(amount uint64, delay uint) glightning.RouteHop {
 		ShortChannelId: c.ShortChannelId,
 		MilliSatoshi:   amount,
 		Delay:          delay,
-		Direction:      c.GetDirection(),
+		Direction:      c.getDirection(),
 	}
 }
 
-func (c *Channel) GetDirection() uint8 {
+func (c *Channel) getDirection() uint8 {
 	if c.Source < c.Destination {
 		return 0
 	}

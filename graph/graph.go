@@ -12,7 +12,7 @@ const (
 )
 
 // ShortChannelId -> Channel
-type Edge map[string]Channel
+type Edge map[string]*Channel
 
 // id -> id -> Edges
 type Graph struct {
@@ -42,9 +42,9 @@ func (g *Graph) AddChannel(c *glightning.Channel) {
 	allocate(&g.Inbound, c.Destination, c.Source)
 	liquidity := estimateInitialLiquidity(c)
 	(g.Outbound)[c.Source][c.Destination][c.ShortChannelId] =
-		Channel{*c, liquidity}
+		&Channel{*c, liquidity}
 	(g.Inbound)[c.Destination][c.Source][c.ShortChannelId] =
-		Channel{*c, c.Satoshis - liquidity}
+		&Channel{*c, c.Satoshis - liquidity}
 }
 
 func estimateInitialLiquidity(c *glightning.Channel) uint64 {
@@ -110,7 +110,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 						ShortChannelId: channel.ShortChannelId,
 						MilliSatoshi:   amount,
 						Delay:          delay,
-						Direction:      channel.GetDirection(),
+						Direction:      channel.getDirection(),
 					}
 					log.Printf("new best hop[%s] = %+v\n", v, hop[v])
 					heap.Push(&pq, &Item{value: &PqItem{

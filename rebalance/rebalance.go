@@ -131,14 +131,14 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 	//TODO: refactor
 	firstHop := route.Hops[0]
 	firstHopChannel := r.Self.Graph.Outbound[r.Out][firstHop.Id][firstHop.ShortChannelId]
-	route.PrependHop(&outgoingChannel, &firstHopChannel)
+	route.PrependHop(outgoingChannel, firstHopChannel)
 
 	// append self to the route
 	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	}).ShortChannelId
 	incomingChannel := r.Self.Graph.Outbound[r.In][r.Self.Id][bestIncomingScid]
-	route.AppendHop(&incomingChannel)
+	route.AppendHop(incomingChannel)
 
 	for i, hop := range route.Hops {
 		log.Printf("hop %d: %+v\n", i, hop)
