@@ -60,12 +60,12 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 	return route, nil
 }
 
-func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]glightning.RouteHop, error) {
+func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem
 	// but the api does it in that way
 	distance := make(map[string]int)
-	hop := make(map[string]glightning.RouteHop)
+	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
 	for u := range g.Inbound {
 		distance[u] = maxDistance
@@ -105,12 +105,10 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
 					distance[v] = newDistance
-					hop[v] = glightning.RouteHop{
-						Id:             u,
-						ShortChannelId: channel.ShortChannelId,
-						MilliSatoshi:   amount,
-						Delay:          delay,
-						Direction:      channel.getDirection(),
+					hop[v] = RouteHop{
+						channel,
+						amount,
+						delay,
 					}
 					log.Printf("new best hop[%s] = %+v\n", v, hop[v])
 					heap.Push(&pq, &Item{value: &PqItem{
@@ -126,8 +124,9 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		return nil, errors.New("no route found")
 	}
 	// now we have the hop map, we can build the hops
-	hops := make([]glightning.RouteHop, 0, 10)
-	for u := src; u != dst; u = hop[u].Id {
+	hops := make([]RouteHop, 0, 10)
+	log.Printf("hop[%s] = %+v\n", src, hop[src].Channel)
+	for u := src; u != dst; u = hop[u].Channel.Destination {
 		hops = append(hops, hop[u])
 	}
 	return hops, nil

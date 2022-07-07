@@ -26,7 +26,6 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 
 	self = node.GetSelf()
 	self.Init(lightning, options)
-	log.Printf("self: %+v\n", self)
 }
 
 func main() {

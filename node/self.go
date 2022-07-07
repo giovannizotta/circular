@@ -48,7 +48,6 @@ func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightni
 }
 
 func (s *Self) refreshPeers() {
-	log.Println("refreshing peers")
 	newPeers := make(map[string]*glightning.Peer)
 	peers, err := s.lightning.ListPeers()
 	if err != nil {
@@ -62,7 +61,6 @@ func (s *Self) refreshPeers() {
 
 func (s *Self) refreshGraph() {
 	//TODO: persistence
-	log.Println("refreshing graph")
 	newGraph := &graph.Graph{}
 
 	channelList, err := s.lightning.ListChannels()
@@ -112,7 +110,7 @@ func (s *Self) setupCronJobs(options map[string]glightning.Option) {
 }
 
 func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
-	_, err := s.lightning.SendPayLite(route.Hops, paymentHash)
+	_, err := s.lightning.SendPayLite(route.ToLightningRoute(), paymentHash)
 	if err != nil {
 		log.Println(err)
 		return nil, err

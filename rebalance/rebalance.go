@@ -113,6 +113,22 @@ func (r *Rebalance) validateParameters() error {
 	return nil
 }
 
+func (r *Rebalance) insertSelfInRoute(route *graph.Route) {
+	// prepend self to the route
+	bestOutgoingScid := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
+		return channel.ReceivableMilliSatoshi
+	}).ShortChannelId
+	outgoingChannel := r.Self.Graph.Outbound[r.Self.Id][r.Out][bestOutgoingScid]
+	route.Prepend(outgoingChannel)
+
+	// append self to the route
+	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+		return channel.SpendableMilliSatoshi
+	}).ShortChannelId
+	incomingChannel := r.Self.Graph.Outbound[r.In][r.Self.Id][bestIncomingScid]
+	route.Append(incomingChannel)
+}
+
 func (r *Rebalance) getRoute() (*graph.Route, error) {
 	exclude := make(map[string]bool)
 	exclude[r.Self.Id] = true
@@ -122,31 +138,11 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 		return nil, err
 	}
 
-	// prepend self to the route
-	bestOutgoingScid := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
-		return channel.ReceivableMilliSatoshi
-	}).ShortChannelId
-	outgoingChannel := r.Self.Graph.Outbound[r.Self.Id][r.Out][bestOutgoingScid]
-
-	//TODO: refactor
-	firstHop := route.Hops[0]
-	firstHopChannel := r.Self.Graph.Outbound[r.Out][firstHop.Id][firstHop.ShortChannelId]
-	route.PrependHop(outgoingChannel, firstHopChannel)
-
-	// append self to the route
-	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
-		return channel.SpendableMilliSatoshi
-	}).ShortChannelId
-	incomingChannel := r.Self.Graph.Outbound[r.In][r.Self.Id][bestIncomingScid]
-	route.AppendHop(incomingChannel)
-
-	for i, hop := range route.Hops {
-		log.Printf("hop %d: %+v\n", i, hop)
-	}
+	r.insertSelfInRoute(route)
 
 	if route.FeePPM() > r.MaxPPM {
-		return nil, errors.New(fmt.Sprintf("graph too expensive. "+
-			"Cheapest graph found was %d ppm, but max_ppm is %d",
+		return nil, errors.New(fmt.Sprintf("route too expensive. "+
+			"Cheapest route found was %d ppm, but max_ppm is %d",
 			route.FeePPM()/1000, r.MaxPPM/1000))
 	}
 
