@@ -19,15 +19,6 @@ func (c *Channel) computeFee(amount uint64) uint64 {
 	return result
 }
 
-func all(v []bool) bool {
-	for _, b := range v {
-		if !b {
-			return false
-		}
-	}
-	return true
-}
-
 func (c *Channel) GetHop(amount uint64, delay uint) glightning.RouteHop {
 	return glightning.RouteHop{
 		Id:             c.Destination,
@@ -43,6 +34,15 @@ func (c *Channel) getDirection() uint8 {
 		return 0
 	}
 	return 1
+}
+
+func all(v []bool) bool {
+	for _, b := range v {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Channel) canUse(amount uint64) bool {

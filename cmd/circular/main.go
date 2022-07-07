@@ -12,7 +12,6 @@ import (
 var (
 	lightning *glightning.Lightning
 	plugin    *glightning.Plugin
-	self      *node.Self
 )
 
 // This is called after the plugin starts up successfully
@@ -21,11 +20,10 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 	lightning = glightning.NewLightning()
 	err := lightning.StartUp(config.RpcFile, config.LightningDir)
 	if err != nil {
-		log.Fatalln("error starting lightning: ", err)
+		log.Fatalln("error starting plugin: ", err)
 	}
 
-	self = node.GetSelf()
-	self.Init(lightning, options)
+	node.GetSelf().Init(lightning, options, config)
 }
 
 func main() {

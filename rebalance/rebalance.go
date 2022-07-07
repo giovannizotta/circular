@@ -15,12 +15,11 @@ const (
 )
 
 type Rebalance struct {
-	In               string           `json:"in"`
-	Out              string           `json:"out"`
-	Amount           uint64           `json:"amount"`
-	MaxPPM           uint64           `json:"max_ppm"`
-	PreimageHashPair PreimageHashPair `json:"preimage,omitempty"`
-	Self             *node.Self       `json:"self,omitempty"`
+	In     string     `json:"in"`
+	Out    string     `json:"out"`
+	Amount uint64     `json:"amount"`
+	MaxPPM uint64     `json:"max_ppm"`
+	Self   *node.Self `json:"self,omitempty"`
 }
 
 func (r *Rebalance) Name() string {
@@ -150,10 +149,11 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 }
 
 func (r *Rebalance) run() (string, error) {
-	//TODO: save the preimage hash pair in the database
 	log.Println("generating preimage/hash pair")
-	r.PreimageHashPair = *NewPreimageHashPair()
-	r.Self.OngoingRebalances[r.PreimageHashPair.Hash] = r.PreimageHashPair.Preimage
+	paymentSecret, err := r.Self.GeneratePreimageHashPair()
+	if err != nil {
+		return "", err
+	}
 
 	log.Println("searching for a route")
 	route, err := r.getRoute()
@@ -162,7 +162,7 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Println("trying to send payment to route")
-	_, err = r.Self.SendPay(route, r.PreimageHashPair.Hash)
+	_, err = r.Self.SendPay(route, paymentSecret)
 	if err != nil {
 		return "", err
 	}

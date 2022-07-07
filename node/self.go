@@ -18,24 +18,23 @@ var (
 )
 
 type Self struct {
-	lightning         *glightning.Lightning
-	Id                string
-	Peers             map[string]*glightning.Peer
-	Graph             *graph.Graph
-	OngoingRebalances map[string]string
+	lightning *glightning.Lightning
+	Id        string
+	Peers     map[string]*glightning.Peer
+	Graph     *graph.Graph
+	DB        *DB
 }
 
 func GetSelf() *Self {
 	once.Do(func() {
 		singleton = &Self{
-			Peers:             make(map[string]*glightning.Peer),
-			OngoingRebalances: make(map[string]string),
+			Peers: make(map[string]*glightning.Peer),
 		}
 	})
 	return singleton
 }
 
-func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightning.Option) {
+func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
 	s.lightning = lightning
 
 	info, err := s.lightning.GetInfo()
@@ -45,6 +44,7 @@ func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightni
 	s.Id = info.Id
 	s.Graph = graph.NewGraph()
 	s.setupCronJobs(options)
+	s.DB = NewDB(config.LightningDir)
 }
 
 func (s *Self) refreshPeers() {
@@ -75,7 +75,6 @@ func (s *Self) refreshGraph() {
 	s.Graph.Outbound = newGraph.Outbound
 }
 
-//TODO: account for direction
 func (s *Self) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
 	channels := s.Peers[id].Channels
 	best := channels[0]
@@ -123,4 +122,13 @@ func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *Self) GeneratePreimageHashPair() (string, error) {
+	pair := NewPreimageHashPair()
+	err := s.DB.Set(pair)
+	if err != nil {
+		return "", err
+	}
+	return pair.Hash, nil
 }
