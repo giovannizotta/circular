@@ -4,9 +4,7 @@ import (
 	"circular/node"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
-	"math/rand"
 	"os"
-	"time"
 )
 
 var (
@@ -27,7 +25,6 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	plugin = glightning.NewPlugin(onInit)
 	registerOptions(plugin)
 	registerSubscriptions(plugin)

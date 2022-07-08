@@ -11,15 +11,17 @@ import (
 )
 
 const (
-	NORMAL = "CHANNELD_NORMAL"
+	NORMAL         = "CHANNELD_NORMAL"
+	DEFAULT_AMOUNT = 200000
+	DEFAULT_PPM    = 100
 )
 
 type Rebalance struct {
 	In     string     `json:"in"`
 	Out    string     `json:"out"`
-	Amount uint64     `json:"amount"`
-	MaxPPM uint64     `json:"max_ppm"`
-	Self   *node.Self `json:"self,omitempty"`
+	Amount uint64     `json:"amount,omitempty"`
+	MaxPPM uint64     `json:"max_ppm,omitempty"`
+	Self   *node.Self `json:"self,omit"`
 }
 
 func (r *Rebalance) Name() string {
@@ -96,8 +98,16 @@ func (r *Rebalance) validateLiquidityParameters() error {
 }
 
 func (r *Rebalance) validateParameters() error {
-	if r.In == "" || r.Out == "" || r.Amount <= 0 || r.MaxPPM < 0 {
-		return errors.New("missing required parameter")
+	if r.In == "" || r.Out == "" {
+		return errors.New("missing required parameter: in and out nodes have to be provided")
+	}
+	if r.Amount == 0 {
+		r.Amount = DEFAULT_AMOUNT
+		log.Println("amount not provided, using default value", r.Amount)
+	}
+	if r.MaxPPM == 0 {
+		r.MaxPPM = DEFAULT_PPM
+		log.Println("maxPPM not provided, using default value", r.MaxPPM)
 	}
 	err := r.validatePeerParameters()
 	if err != nil {

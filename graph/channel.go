@@ -8,7 +8,7 @@ import (
 
 type Channel struct {
 	glightning.Channel
-	Liquidity uint64
+	Liquidity uint64 `json:"liquidity"`
 }
 
 func (c *Channel) computeFee(amount uint64) uint64 {

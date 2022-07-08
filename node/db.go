@@ -19,9 +19,9 @@ func NewDB(path string) *DB {
 	}
 }
 
-func (d *DB) Set(secret PreimageHashPair) error {
+func (d *DB) Set(key, value string) error {
 	err := d.db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(secret.Hash), []byte(secret.Preimage))
+		return txn.Set([]byte(key), []byte(value))
 	})
 	if err != nil {
 		return err
@@ -47,26 +47,4 @@ func (d *DB) Get(key string) (string, error) {
 		return "", err
 	}
 	return value, nil
-}
-
-func (d *DB) PrintAllPreimageHashPairs() error {
-	err := d.db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 10
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-			k := item.Key()
-			err := item.Value(func(v []byte) error {
-				log.Printf("key=%s, value=%s\n", k, v)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	return err
 }

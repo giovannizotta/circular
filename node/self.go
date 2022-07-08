@@ -5,7 +5,9 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/robfig/cron/v3"
 	"log"
+	"math/rand"
 	"sync"
+	"time"
 )
 
 const (
@@ -14,7 +16,8 @@ const (
 
 var (
 	singleton *Self
-	once      sync.Once
+
+	once sync.Once
 )
 
 type Self struct {
@@ -27,6 +30,7 @@ type Self struct {
 
 func GetSelf() *Self {
 	once.Do(func() {
+		rand.Seed(time.Now().UnixNano())
 		singleton = &Self{
 			Peers: make(map[string]*glightning.Peer),
 		}
@@ -60,7 +64,6 @@ func (s *Self) refreshPeers() {
 }
 
 func (s *Self) refreshGraph() {
-	//TODO: persistence
 	newGraph := &graph.Graph{}
 
 	channelList, err := s.lightning.ListChannels()
@@ -71,6 +74,7 @@ func (s *Self) refreshGraph() {
 	for _, c := range channelList {
 		newGraph.AddChannel(c)
 	}
+
 	s.Graph.Inbound = newGraph.Inbound
 	s.Graph.Outbound = newGraph.Outbound
 }
@@ -101,6 +105,7 @@ func (s *Self) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
 		s.refreshGraph()
+		s.Graph.SaveToFile()
 	})
 	addCronJob(c, options["peer_refresh"].GetValue().(string), func() {
 		s.refreshPeers()
@@ -115,18 +120,22 @@ func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		return nil, err
 	}
 
-	//TODO: learn from failed payments
+	// TODO: learn from failed payments
 	result, err := s.lightning.WaitSendPay(paymentHash, 20)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	log.Printf("result %+v\n", result)
+	log.Printf("status %s\n", result.Status)
+	log.Printf("error onion: %s\n", result.ErrorOnion)
+
 	return result, nil
 }
 
 func (s *Self) GeneratePreimageHashPair() (string, error) {
 	pair := NewPreimageHashPair()
-	err := s.DB.Set(pair)
+	err := s.DB.Set(pair.Hash, pair.Preimage)
 	if err != nil {
 		return "", err
 	}

@@ -2,12 +2,16 @@ package graph
 
 import (
 	"container/heap"
+	"encoding/json"
 	"errors"
 	"github.com/elementsproject/glightning/glightning"
+	"log"
+	"os"
 )
 
 const (
 	GRAPH_REFRESH = "10m"
+	FILE          = "graph.json"
 )
 
 // ShortChannelId -> Channel
@@ -15,13 +19,59 @@ type Edge map[string]*Channel
 
 // id -> id -> Edges
 type Graph struct {
-	Outbound map[string]map[string]Edge
-	Inbound  map[string]map[string]Edge
+	Outbound map[string]map[string]Edge `json:"outbound"`
+	Inbound  map[string]map[string]Edge `json:"inbound"`
 }
 
 // constructor
 func NewGraph() *Graph {
-	return &Graph{}
+	g, err := loadFromFile()
+	if err != nil {
+		g = &Graph{}
+	}
+	return g
+}
+
+func loadFromFile() (*Graph, error) {
+	file, err := os.Open(FILE)
+	if err != nil {
+		file, err = os.Open(FILE + ".old")
+		if err != nil {
+			return nil, err
+		}
+	}
+	defer file.Close()
+	var g Graph
+	err = json.NewDecoder(file).Decode(&g)
+	if err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (g *Graph) SaveToFile() {
+	// open temporary file
+	file, err := os.Create(FILE + ".tmp")
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+		return
+	}
+	defer file.Close()
+	// write json
+	bytes, err := json.Marshal(g)
+	_, err = file.Write(bytes)
+	if err != nil {
+		log.Printf("error writing graph on file: %v", err)
+		return
+	}
+
+	// save old file
+	// check if FILE exists
+	if _, err := os.Stat(FILE); err == nil {
+		err = os.Rename(FILE, FILE+".old")
+	}
+	// rename tmp to FILE
+	err = os.Rename(FILE+".tmp", FILE)
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
@@ -61,8 +111,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 
 func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
-	// TODO: consider that 32bits fees can be a problem
-	// but the api does it in that way
+	// TODO: consider that 32bits fees can be a problem but the api does it in that way
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
