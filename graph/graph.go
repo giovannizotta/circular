@@ -14,16 +14,24 @@ const (
 	FILE          = "graph.json"
 )
 
-// ShortChannelId -> Channel
+// Edge contains all the channels going from nodeA to nodeB
+// Key is the short channel id
+// Value is the channel
 type Edge map[string]*Channel
 
-// id -> id -> Edges
+// Graph is the lightning network graph from the perspective of self
+// It has been built from the gossip received by lightningd.
+// If you want to access the channels flowing out from a node,
+// you can use the following: g.Outbound[node]
+// If you want to access the channels between nodeA and nodeB,
+// you can use the following: g.Outbound[nodeA][nodeB]
+// If you want to access a specific channel between nodeA and nodeB,
+// you can use the following: g.Outbound[nodeA][nodeB][shortChannelId]
 type Graph struct {
 	Outbound map[string]map[string]Edge `json:"outbound"`
 	Inbound  map[string]map[string]Edge `json:"inbound"`
 }
 
-// constructor
 func NewGraph() *Graph {
 	g, err := loadFromFile()
 	if err != nil {

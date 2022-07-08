@@ -10,7 +10,7 @@ import (
 func registerOptions(p *glightning.Plugin) {
 	err := p.RegisterNewOption("graph_refresh",
 		"How often the gossip graph gets refreshed",
-		graph.GRAPH_REFRESH)
+		graph.REFRESH_INTERVAL)
 	if err != nil {
 		log.Fatalln("error registering option graph_refresh:", err)
 	}

@@ -25,7 +25,7 @@ type Self struct {
 	Id        string
 	Peers     map[string]*glightning.Peer
 	Graph     *graph.Graph
-	DB        *DB
+	DB        *PreimageStore
 }
 
 func GetSelf() *Self {
@@ -123,13 +123,8 @@ func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	// TODO: learn from failed payments
 	result, err := s.lightning.WaitSendPay(paymentHash, 20)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
-	log.Printf("result %+v\n", result)
-	log.Printf("status %s\n", result.Status)
-	log.Printf("error onion: %s\n", result.ErrorOnion)
-
 	return result, nil
 }
 

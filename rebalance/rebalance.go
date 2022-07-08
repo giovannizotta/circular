@@ -177,6 +177,6 @@ func (r *Rebalance) run() (string, error) {
 		return "", err
 	}
 
-	// TODO: after successful rebalance, clean DB and refresh channel balances
+	// TODO: after successful rebalance, clean PreimageStore and refresh channel balances
 	return fmt.Sprintf("rebalance successful at %d ppm\n", route.FeePPM()/1000), nil
 }
