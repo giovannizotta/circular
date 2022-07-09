@@ -7,9 +7,21 @@ import (
 	"strings"
 )
 
+type ChannelId struct {
+	ShortChannelId string `json:"short_channel_id"`
+	Direction      uint8  `json:"direction"`
+}
+
 type Channel struct {
-	glightning.Channel
-	Liquidity uint64 `json:"liquidity"`
+	*glightning.Channel `json:"-"`
+	Liquidity           uint64 `json:"liquidity"`
+}
+
+func NewChannel(channel *glightning.Channel, liquidity uint64) *Channel {
+	return &Channel{
+		Channel:   channel,
+		Liquidity: liquidity,
+	}
 }
 
 func (c *Channel) computeFee(amount uint64) uint64 {

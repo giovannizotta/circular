@@ -1,12 +1,14 @@
 package graph
 
 import (
+	"circular/util"
 	"container/heap"
 	"encoding/json"
 	"errors"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"os"
+	"time"
 )
 
 const (
@@ -14,26 +16,28 @@ const (
 	FILE          = "graph.json"
 )
 
-// Edge contains all the channels going from nodeA to nodeB
-// Key is the short channel id
-// Value is the channel
-type Edge map[string]*Channel
+// Edge contains all the SCIDs of the channels going from nodeA to nodeB
+type Edge []string
 
 // Graph is the lightning network graph from the perspective of self
 // It has been built from the gossip received by lightningd.
-// To access the channels flowing out from a node, use: g.Outbound[node]
+// To access the edges flowing out from a node, use: g.Outbound[node]
 // To access an edge between nodeA and nodeB, use: g.Outbound[nodeA][nodeB]
-// * an edge consists of one or more channels between nodeA and nodeB
-// To access a specific channel between nodeA and nodeB, use: g.Outbound[nodeA][nodeB][shortChannelId]
+// * an edge consists of one or more SCIDs between nodeA and nodeB
+// To access a channel via channelId (scid/direction). use: g.Channels[channelId]
 type Graph struct {
-	Outbound map[string]map[string]Edge `json:"outbound"`
-	Inbound  map[string]map[string]Edge `json:"inbound"`
+	Channels map[string]*Channel        `json:"channels"`
+	Outbound map[string]map[string]Edge `json:"-"`
+	Inbound  map[string]map[string]Edge `json:"-"`
 }
 
 func NewGraph() *Graph {
+	var g *Graph
 	g, err := loadFromFile()
 	if err != nil {
-		return nil
+		g = &Graph{
+			Channels: make(map[string]*Channel),
+		}
 	}
 	return g
 }
@@ -46,23 +50,15 @@ func allocate(links *map[string]map[string]Edge, from, to string) {
 		(*links)[from] = make(map[string]Edge)
 	}
 	if (*links)[from][to] == nil {
-		(*links)[from][to] = make(Edge)
+		(*links)[from][to] = make([]string, 0)
 	}
 }
 
-// TODO: change initial liquidity allocation
-func (g *Graph) AddChannel(c *glightning.Channel) {
+func (g *Graph) AddChannel(c *Channel) {
 	allocate(&g.Outbound, c.Source, c.Destination)
 	allocate(&g.Inbound, c.Destination, c.Source)
-	liquidity := estimateInitialLiquidity(c)
-	(g.Outbound)[c.Source][c.Destination][c.ShortChannelId] =
-		&Channel{*c, liquidity}
-	(g.Inbound)[c.Destination][c.Source][c.ShortChannelId] =
-		&Channel{*c, (c.Satoshis * 1000) - liquidity}
-}
-
-func estimateInitialLiquidity(c *glightning.Channel) uint64 {
-	return uint64(0.5 * float64(c.Satoshis*1000))
+	g.Outbound[c.Source][c.Destination] = append(g.Outbound[c.Source][c.Destination], c.ShortChannelId)
+	g.Inbound[c.Destination][c.Source] = append(g.Inbound[c.Destination][c.Source], c.ShortChannelId)
 }
 
 func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool) (*Route, error) {
@@ -114,12 +110,14 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 				continue
 			}
 			log.Println("checking edge", v)
-			for _, channel := range edge {
+			for _, scid := range edge {
+				channel := g.Channels[scid+"/"+GetDirection(v, u)]
 				log.Println("channel:", channel)
 				if !channel.canUse(amount) {
 					continue
 				}
 				log.Println("channel can be used")
+
 				channelFee := int(channel.computeFee(amount))
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
@@ -152,6 +150,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 }
 
 func loadFromFile() (*Graph, error) {
+	defer util.TimeTrack(time.Now(), "graph.loadFromFile")
 	file, err := os.Open(FILE)
 	if err != nil {
 		log.Println("unable to load from file:", err)
@@ -163,15 +162,19 @@ func loadFromFile() (*Graph, error) {
 		}
 	}
 	defer file.Close()
-	g := &Graph{}
+	g := &Graph{
+		Channels: make(map[string]*Channel),
+	}
 	err = json.NewDecoder(file).Decode(&g)
 	if err != nil {
 		return nil, err
 	}
+	// TODO: add Outbound and Inbound
 	return g, nil
 }
 
 func (g *Graph) SaveToFile() {
+	defer util.TimeTrack(time.Now(), "graph.SaveToFile")
 	// open temporary file
 	file, err := os.Create(FILE + ".tmp")
 	if err != nil {
@@ -180,10 +183,9 @@ func (g *Graph) SaveToFile() {
 	}
 	defer file.Close()
 	// write json
-	bytes, err := json.Marshal(g)
-	_, err = file.Write(bytes)
+	err = json.NewEncoder(file).Encode(g)
 	if err != nil {
-		log.Printf("error writing graph on file: %v", err)
+		log.Printf("error writing file: %v", err)
 		return
 	}
 
@@ -194,4 +196,27 @@ func (g *Graph) SaveToFile() {
 	}
 	// rename tmp to FILE
 	err = os.Rename(FILE+".tmp", FILE)
+}
+
+func (g *Graph) Refresh(channelList []*glightning.Channel) {
+	defer util.TimeTrack(time.Now(), "graph.Refresh")
+	for _, c := range channelList {
+		var channel *Channel
+		channelId := c.ShortChannelId + "/" + GetDirection(c.Source, c.Destination)
+		// if the channel did not exist prior to this refresh estimate its initial liquidity to be 50/50
+		if _, ok := g.Channels[channelId]; !ok {
+			channel = NewChannel(c, uint64(0.5*float64(c.Satoshis*1000)))
+			g.AddChannel(channel)
+		} else {
+			channel = NewChannel(c, g.Channels[channelId].Liquidity)
+		}
+		g.Channels[channelId] = channel
+	}
+}
+
+func GetDirection(from, to string) string {
+	if from < to {
+		return "1"
+	}
+	return "0"
 }

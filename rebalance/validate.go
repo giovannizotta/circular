@@ -8,31 +8,31 @@ import (
 
 func (r *Rebalance) validatePeerParameters() error {
 	//validate that the nodes are not self
-	if r.In == r.Self.Id || r.Out == r.Self.Id {
+	if r.In == r.Node.Id || r.Out == r.Node.Id {
 		return errors.New("one of the nodes is self")
 	}
 	//validate that the nodes are not the same
 	if r.In == r.Out {
 		return errors.New("incoming and outgoing nodes are the same")
 	}
-	if len(r.Self.Peers) == 0 {
+	if len(r.Node.Peers) == 0 {
 		return errors.New("no peers yet")
 	}
 	//validate that In and Out are peers
-	if !r.Self.HasPeer(r.In) {
+	if !r.Node.HasPeer(r.In) {
 		return errors.New("incoming node is not a peer")
 	}
-	if !r.Self.HasPeer(r.Out) {
+	if !r.Node.HasPeer(r.Out) {
 		return errors.New("outgoing node is not a peer")
 	}
 	return nil
 }
 
 func (r *Rebalance) validateLiquidityParameters() error {
-	inChannel := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+	inChannel := r.Node.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	})
-	outChannel := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
+	outChannel := r.Node.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	})
 	//validate that the channels are in normal state

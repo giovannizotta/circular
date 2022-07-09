@@ -22,3 +22,12 @@ func NewPreimageHashPair() PreimageHashPair {
 		Hash:     hex.EncodeToString(hash[:]),
 	}
 }
+
+func (s *Node) GeneratePreimageHashPair() (string, error) {
+	pair := NewPreimageHashPair()
+	err := s.DB.Set(pair.Hash, pair.Preimage)
+	if err != nil {
+		return "", err
+	}
+	return pair.Hash, nil
+}

@@ -3,11 +3,13 @@ package rebalance
 import (
 	"circular/graph"
 	"circular/node"
+	"circular/util"
 	"errors"
 	"fmt"
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 	"log"
+	"time"
 )
 
 const (
@@ -21,7 +23,7 @@ type Rebalance struct {
 	Out    string     `json:"out"`
 	Amount uint64     `json:"amount,omitempty"`
 	MaxPPM uint64     `json:"max_ppm,omitempty"`
-	Self   *node.Node `json:"self,omit"`
+	Node   *node.Node `json:"self,omit"`
 }
 
 func (r *Rebalance) Name() string {
@@ -33,9 +35,9 @@ func (r *Rebalance) New() interface{} {
 }
 
 func (r *Rebalance) Call() (jrpc2.Result, error) {
-	r.Self = node.GetNode()
+	r.Node = node.GetNode()
 	log.Println("rebalance called")
-	log.Println("self: ", r.Self.Id)
+	log.Println("self: ", r.Node.Id)
 	log.Println("in:", r.In)
 	log.Println("out:", r.Out)
 	log.Println("amount:", r.Amount, "max_ppm:", r.MaxPPM)
@@ -55,32 +57,36 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	return NewResult(result), nil
 }
 
-func (r *Rebalance) insertSelfInRoute(route *graph.Route) {
-	// prepend self to the route
-	bestOutgoingScid := r.Self.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
-		return channel.ReceivableMilliSatoshi
-	}).ShortChannelId
-	outgoingChannel := r.Self.Graph.Outbound[r.Self.Id][r.Out][bestOutgoingScid]
-	route.Prepend(outgoingChannel)
-
-	// append self to the route
-	bestIncomingScid := r.Self.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+func (r *Rebalance) prependNode(route *graph.Route) {
+	bestScid := r.Node.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	}).ShortChannelId
-	incomingChannel := r.Self.Graph.Outbound[r.In][r.Self.Id][bestIncomingScid]
-	route.Append(incomingChannel)
+	channelId := bestScid + "/" + graph.GetDirection(r.Node.Id, r.Out)
+	channel := r.Node.Graph.Channels[channelId]
+	route.Prepend(channel)
+}
+
+func (r *Rebalance) appendNode(route *graph.Route) {
+	bestScid := r.Node.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
+		return channel.ReceivableMilliSatoshi
+	}).ShortChannelId
+	channelId := bestScid + "/" + graph.GetDirection(r.In, r.Node.Id)
+	channel := r.Node.Graph.Channels[channelId]
+	route.Append(channel)
 }
 
 func (r *Rebalance) getRoute() (*graph.Route, error) {
+	defer util.TimeTrack(time.Now(), "rebalance.getRoute")
 	exclude := make(map[string]bool)
-	exclude[r.Self.Id] = true
+	exclude[r.Node.Id] = true
 
-	route, err := r.Self.Graph.GetRoute(r.Out, r.In, r.Amount, exclude)
+	route, err := r.Node.Graph.GetRoute(r.Out, r.In, r.Amount, exclude)
 	if err != nil {
 		return nil, err
 	}
 
-	r.insertSelfInRoute(route)
+	r.prependNode(route)
+	r.appendNode(route)
 
 	if route.FeePPM() > r.MaxPPM {
 		return nil, errors.New(fmt.Sprintf("route too expensive. "+
@@ -93,7 +99,7 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 
 func (r *Rebalance) run() (string, error) {
 	log.Println("generating preimage/hash pair")
-	paymentSecret, err := r.Self.GeneratePreimageHashPair()
+	paymentSecret, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +111,7 @@ func (r *Rebalance) run() (string, error) {
 	}
 
 	log.Println("trying to send payment to route")
-	_, err = r.Self.SendPay(route, paymentSecret)
+	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
 		return "", err
 	}
