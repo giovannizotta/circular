@@ -21,7 +21,7 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 		log.Fatalln("error starting plugin: ", err)
 	}
 
-	node.GetSelf().Init(lightning, options, config)
+	node.GetNode().Init(lightning, options, config)
 }
 
 func main() {

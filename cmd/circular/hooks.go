@@ -12,7 +12,7 @@ func registerHooks(p *glightning.Plugin) {
 }
 
 func OnHtlcAccepted(event *glightning.HtlcAcceptedEvent) (*glightning.HtlcAcceptedResponse, error) {
-	self := node.GetSelf()
+	self := node.GetNode()
 	preimage, err := self.DB.Get(event.Htlc.PaymentHash)
 	if err != nil {
 		return event.Continue(), nil

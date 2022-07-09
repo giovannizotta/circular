@@ -2,6 +2,7 @@ package graph
 
 import (
 	"github.com/elementsproject/glightning/glightning"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -52,5 +53,6 @@ func (c *Channel) canUse(amount uint64) bool {
 		c.IsActive,
 		maxHtlcMsat >= amount,
 	}
+	log.Printf("conditions: %+v", conditions)
 	return all(conditions)
 }

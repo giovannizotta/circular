@@ -11,16 +11,17 @@ import (
 )
 
 const (
-	PEER_REFRESH = "1m"
+	PEER_REFRESH    = "1m"
+	PAYMENT_TIMEOUT = 60
 )
 
 var (
-	singleton *Self
+	singleton *Node
 
 	once sync.Once
 )
 
-type Self struct {
+type Node struct {
 	lightning *glightning.Lightning
 	Id        string
 	Peers     map[string]*glightning.Peer
@@ -28,17 +29,17 @@ type Self struct {
 	DB        *PreimageStore
 }
 
-func GetSelf() *Self {
+func GetNode() *Node {
 	once.Do(func() {
 		rand.Seed(time.Now().UnixNano())
-		singleton = &Self{
+		singleton = &Node{
 			Peers: make(map[string]*glightning.Peer),
 		}
 	})
 	return singleton
 }
 
-func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
+func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
 	s.lightning = lightning
 
 	info, err := s.lightning.GetInfo()
@@ -47,11 +48,17 @@ func (s *Self) Init(lightning *glightning.Lightning, options map[string]glightni
 	}
 	s.Id = info.Id
 	s.Graph = graph.NewGraph()
-	s.setupCronJobs(options)
+	if s.Graph == nil {
+		log.Println("could not retrieve graph from file")
+		s.refreshGraph()
+	}
+	s.refreshPeers()
 	s.DB = NewDB(config.LightningDir)
+	s.setupCronJobs(options)
 }
 
-func (s *Self) refreshPeers() {
+func (s *Node) refreshPeers() {
+	log.Println("refreshing peers")
 	newPeers := make(map[string]*glightning.Peer)
 	peers, err := s.lightning.ListPeers()
 	if err != nil {
@@ -63,7 +70,8 @@ func (s *Self) refreshPeers() {
 	s.Peers = newPeers
 }
 
-func (s *Self) refreshGraph() {
+func (s *Node) refreshGraph() {
+	log.Println("refreshing graph")
 	newGraph := &graph.Graph{}
 
 	channelList, err := s.lightning.ListChannels()
@@ -74,12 +82,10 @@ func (s *Self) refreshGraph() {
 	for _, c := range channelList {
 		newGraph.AddChannel(c)
 	}
-
-	s.Graph.Inbound = newGraph.Inbound
-	s.Graph.Outbound = newGraph.Outbound
+	s.Graph = newGraph
 }
 
-func (s *Self) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
+func (s *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
 	channels := s.Peers[id].Channels
 	best := channels[0]
 	for _, channel := range channels {
@@ -90,7 +96,7 @@ func (s *Self) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel
 	return best
 }
 
-func (s *Self) HasPeer(id string) bool {
+func (s *Node) HasPeer(id string) bool {
 	return s.Peers[id] != nil
 }
 
@@ -101,7 +107,7 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 	}
 }
 
-func (s *Self) setupCronJobs(options map[string]glightning.Option) {
+func (s *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
 		s.refreshGraph()
@@ -113,7 +119,7 @@ func (s *Self) setupCronJobs(options map[string]glightning.Option) {
 	c.Start()
 }
 
-func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
+func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
 	_, err := s.lightning.SendPayLite(route.ToLightningRoute(), paymentHash)
 	if err != nil {
 		log.Println(err)
@@ -121,14 +127,14 @@ func (s *Self) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	}
 
 	// TODO: learn from failed payments
-	result, err := s.lightning.WaitSendPay(paymentHash, 20)
+	result, err := s.lightning.WaitSendPay(paymentHash, PAYMENT_TIMEOUT)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (s *Self) GeneratePreimageHashPair() (string, error) {
+func (s *Node) GeneratePreimageHashPair() (string, error) {
 	pair := NewPreimageHashPair()
 	err := s.DB.Set(pair.Hash, pair.Preimage)
 	if err != nil {

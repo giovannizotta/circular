@@ -21,12 +21,10 @@ type Edge map[string]*Channel
 
 // Graph is the lightning network graph from the perspective of self
 // It has been built from the gossip received by lightningd.
-// If you want to access the channels flowing out from a node,
-// you can use the following: g.Outbound[node]
-// If you want to access the channels between nodeA and nodeB,
-// you can use the following: g.Outbound[nodeA][nodeB]
-// If you want to access a specific channel between nodeA and nodeB,
-// you can use the following: g.Outbound[nodeA][nodeB][shortChannelId]
+// To access the channels flowing out from a node, use: g.Outbound[node]
+// To access an edge between nodeA and nodeB, use: g.Outbound[nodeA][nodeB]
+// * an edge consists of one or more channels between nodeA and nodeB
+// To access a specific channel between nodeA and nodeB, use: g.Outbound[nodeA][nodeB][shortChannelId]
 type Graph struct {
 	Outbound map[string]map[string]Edge `json:"outbound"`
 	Inbound  map[string]map[string]Edge `json:"inbound"`
@@ -35,51 +33,9 @@ type Graph struct {
 func NewGraph() *Graph {
 	g, err := loadFromFile()
 	if err != nil {
-		g = &Graph{}
+		return nil
 	}
 	return g
-}
-
-func loadFromFile() (*Graph, error) {
-	file, err := os.Open(FILE)
-	if err != nil {
-		file, err = os.Open(FILE + ".old")
-		if err != nil {
-			return nil, err
-		}
-	}
-	defer file.Close()
-	var g Graph
-	err = json.NewDecoder(file).Decode(&g)
-	if err != nil {
-		return nil, err
-	}
-	return &g, nil
-}
-
-func (g *Graph) SaveToFile() {
-	// open temporary file
-	file, err := os.Create(FILE + ".tmp")
-	if err != nil {
-		log.Printf("error opening file: %v", err)
-		return
-	}
-	defer file.Close()
-	// write json
-	bytes, err := json.Marshal(g)
-	_, err = file.Write(bytes)
-	if err != nil {
-		log.Printf("error writing graph on file: %v", err)
-		return
-	}
-
-	// save old file
-	// check if FILE exists
-	if _, err := os.Stat(FILE); err == nil {
-		err = os.Rename(FILE, FILE+".old")
-	}
-	// rename tmp to FILE
-	err = os.Rename(FILE+".tmp", FILE)
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
@@ -94,6 +50,7 @@ func allocate(links *map[string]map[string]Edge, from, to string) {
 	}
 }
 
+// TODO: change initial liquidity allocation
 func (g *Graph) AddChannel(c *glightning.Channel) {
 	allocate(&g.Outbound, c.Source, c.Destination)
 	allocate(&g.Inbound, c.Destination, c.Source)
@@ -120,6 +77,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
+	log.Println("looking for a route from", src, "to", dst)
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
@@ -127,6 +85,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		distance[u] = maxDistance
 	}
 	distance[dst] = 0
+	log.Printf("distance map: %+v", distance)
 
 	pq := make(PriorityQueue, 1, 16)
 	// Insert destination
@@ -143,6 +102,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		amount := pqItem.value.Amount
 		delay := pqItem.value.Delay
 		fee := pqItem.priority
+		log.Printf("processing node %s with amount %d and delay %d", u, amount, delay)
 		if u == src {
 			break
 		}
@@ -153,13 +113,17 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			if exclude[v] {
 				continue
 			}
+			log.Println("checking edge", v)
 			for _, channel := range edge {
+				log.Println("channel:", channel)
 				if !channel.canUse(amount) {
 					continue
 				}
+				log.Println("channel can be used")
 				channelFee := int(channel.computeFee(amount))
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
+					log.Println("found new best fee coming from ", v, "with fee", newDistance)
 					distance[v] = newDistance
 					hop[v] = RouteHop{
 						channel,
@@ -176,6 +140,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		}
 	}
 	if distance[src] == maxDistance {
+		log.Println("no route found")
 		return nil, errors.New("no route found")
 	}
 	// now we have the hop map, we can build the hops
@@ -184,4 +149,49 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		hops = append(hops, hop[u])
 	}
 	return hops, nil
+}
+
+func loadFromFile() (*Graph, error) {
+	file, err := os.Open(FILE)
+	if err != nil {
+		log.Println("unable to load from file:", err)
+		log.Println("trying to load an old version of the graph")
+		file, err = os.Open(FILE + ".old")
+		if err != nil {
+			log.Println("unable to load any old version of the file: ", err)
+			return nil, err
+		}
+	}
+	defer file.Close()
+	g := &Graph{}
+	err = json.NewDecoder(file).Decode(&g)
+	if err != nil {
+		return nil, err
+	}
+	return g, nil
+}
+
+func (g *Graph) SaveToFile() {
+	// open temporary file
+	file, err := os.Create(FILE + ".tmp")
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+		return
+	}
+	defer file.Close()
+	// write json
+	bytes, err := json.Marshal(g)
+	_, err = file.Write(bytes)
+	if err != nil {
+		log.Printf("error writing graph on file: %v", err)
+		return
+	}
+
+	// save old file
+	// check if FILE exists
+	if _, err := os.Stat(FILE); err == nil {
+		err = os.Rename(FILE, FILE+".old")
+	}
+	// rename tmp to FILE
+	err = os.Rename(FILE+".tmp", FILE)
 }

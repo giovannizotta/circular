@@ -3,7 +3,7 @@ package rebalance
 import "github.com/elementsproject/glightning/glightning"
 
 type Result struct {
-	Result     string `json:"rebalance"`
+	Result     string `json:"result"`
 	FormatHint string `json:"format-hint,omitempty"`
 }
 
