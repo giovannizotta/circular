@@ -6,6 +6,7 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -84,4 +85,15 @@ func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
+	direction := strconv.Itoa(sf.Data.ErringDirection)
+	oppositeDirection := strconv.Itoa(sf.Data.ErringDirection ^ 0x1)
+	channelId := sf.Data.ErringChannel + "/" + direction
+	oppositeChannelId := sf.Data.ErringChannel + "/" + oppositeDirection
+
+	s.Graph.Channels[channelId].Liquidity = sf.Data.MilliSatoshi - 1000000
+	s.Graph.Channels[oppositeChannelId].Liquidity =
+		s.Graph.Channels[oppositeChannelId].Satoshis*1000 - s.Graph.Channels[channelId].Liquidity
 }

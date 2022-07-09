@@ -1,6 +1,7 @@
 package main
 
 import (
+	"circular/node"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 )
@@ -16,12 +17,10 @@ func registerSubscriptions(p *glightning.Plugin) {
 
 func OnSendPayFailure(sf *glightning.SendPayFailure) {
 	log.Printf("send pay failure: %+v\n", sf.Data)
-	log.Println("ErringNode: ", sf.Data.ErringNode)
-	log.Println("ErringChannel: ", sf.Data.ErringChannel)
-	log.Println("ErringIndex: ", sf.Data.ErringIndex)
-	log.Println("ErringDirection: ", sf.Data.ErringDirection)
+	node.GetNode().OnPaymentFailure(sf)
 }
 
+// TODO: remove secret from db
 func OnSendPaySuccess(ss *glightning.SendPaySuccess) {
 	log.Printf("send pay success: %+v\n", ss)
 }
