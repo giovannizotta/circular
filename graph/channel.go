@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-type ChannelId struct {
-	ShortChannelId string `json:"short_channel_id"`
-	Direction      uint8  `json:"direction"`
-}
-
 type Channel struct {
 	*glightning.Channel `json:"-"`
 	Liquidity           uint64 `json:"liquidity"`

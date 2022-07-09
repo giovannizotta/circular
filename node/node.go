@@ -18,8 +18,7 @@ const (
 
 var (
 	singleton *Node
-
-	once sync.Once
+	once      sync.Once
 )
 
 type Node struct {
