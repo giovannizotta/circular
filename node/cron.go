@@ -36,7 +36,7 @@ func (s *Node) refreshGraph() {
 	}
 
 	s.Graph.Refresh(channelList)
-	s.Graph.SaveToFile()
+	s.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
 }
 
 func (s *Node) refreshPeers() {

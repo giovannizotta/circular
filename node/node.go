@@ -14,6 +14,7 @@ import (
 const (
 	PEER_REFRESH    = "1m"
 	PAYMENT_TIMEOUT = 60
+	CIRCULAR_DIR    = "circular"
 )
 
 var (
@@ -47,10 +48,10 @@ func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 		log.Fatalln(err)
 	}
 	s.Id = info.Id
-	s.Graph = graph.NewGraph()
+	s.Graph = graph.NewGraph(CIRCULAR_DIR + "/graph.json")
 	s.refreshGraph()
 	s.refreshPeers()
-	s.DB = NewDB(config.LightningDir)
+	s.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
 	s.setupCronJobs(options)
 }
 

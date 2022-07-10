@@ -3,11 +3,9 @@ package graph
 import (
 	"circular/util"
 	"container/heap"
-	"encoding/json"
 	"errors"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
-	"os"
 	"time"
 )
 
@@ -16,7 +14,7 @@ const (
 	FILE          = "graph.json"
 )
 
-// Edge contains all the SCIDs of the channels going from nodeA to nodeB
+// Edge contains All the SCIDs of the channels going from nodeA to nodeB
 type Edge []string
 
 // Graph is the lightning network graph from the perspective of self
@@ -31,9 +29,9 @@ type Graph struct {
 	Inbound  map[string]map[string]Edge `json:"-"`
 }
 
-func NewGraph() *Graph {
+func NewGraph(filename string) *Graph {
 	var g *Graph
-	g, err := loadFromFile()
+	g, err := LoadFromFile(filename)
 	if err != nil {
 		g = &Graph{
 			Channels: make(map[string]*Channel),
@@ -73,6 +71,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
+	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	log.Println("looking for a route from", src, "to", dst)
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
@@ -111,14 +110,14 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			}
 			log.Println("checking edge", v)
 			for _, scid := range edge {
-				channel := g.Channels[scid+"/"+GetDirection(v, u)]
+				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
 				log.Println("channel:", channel)
-				if !channel.canUse(amount) {
+				if !channel.CanUse(amount) {
 					continue
 				}
 				log.Println("channel can be used")
 
-				channelFee := int(channel.computeFee(amount))
+				channelFee := int(channel.ComputeFee(amount))
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
 					log.Println("found new best fee coming from ", v, "with fee", newDistance)
@@ -149,60 +148,11 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	return hops, nil
 }
 
-func loadFromFile() (*Graph, error) {
-	defer util.TimeTrack(time.Now(), "graph.loadFromFile")
-	file, err := os.Open(FILE)
-	if err != nil {
-		log.Println("unable to load from file:", err)
-		log.Println("trying to load an old version of the graph")
-		file, err = os.Open(FILE + ".old")
-		if err != nil {
-			log.Println("unable to load any old version of the file: ", err)
-			return nil, err
-		}
-	}
-	defer file.Close()
-	g := &Graph{
-		Channels: make(map[string]*Channel),
-	}
-	err = json.NewDecoder(file).Decode(&g)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: add Outbound and Inbound
-	return g, nil
-}
-
-func (g *Graph) SaveToFile() {
-	defer util.TimeTrack(time.Now(), "graph.SaveToFile")
-	// open temporary file
-	file, err := os.Create(FILE + ".tmp")
-	if err != nil {
-		log.Printf("error opening file: %v", err)
-		return
-	}
-	defer file.Close()
-	// write json
-	err = json.NewEncoder(file).Encode(g)
-	if err != nil {
-		log.Printf("error writing file: %v", err)
-		return
-	}
-
-	// save old file
-	// check if FILE exists
-	if _, err := os.Stat(FILE); err == nil {
-		err = os.Rename(FILE, FILE+".old")
-	}
-	// rename tmp to FILE
-	err = os.Rename(FILE+".tmp", FILE)
-}
-
 func (g *Graph) Refresh(channelList []*glightning.Channel) {
 	defer util.TimeTrack(time.Now(), "graph.Refresh")
 	for _, c := range channelList {
 		var channel *Channel
-		channelId := c.ShortChannelId + "/" + GetDirection(c.Source, c.Destination)
+		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
 		// if the channel did not exist prior to this refresh estimate its initial liquidity to be 50/50
 		if _, ok := g.Channels[channelId]; !ok {
 			channel = NewChannel(c, uint64(0.5*float64(c.Satoshis*1000)))
@@ -212,11 +162,4 @@ func (g *Graph) Refresh(channelList []*glightning.Channel) {
 		}
 		g.Channels[channelId] = channel
 	}
-}
-
-func GetDirection(from, to string) string {
-	if from < to {
-		return "1"
-	}
-	return "0"
 }

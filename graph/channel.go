@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"strconv"
@@ -19,7 +20,7 @@ func NewChannel(channel *glightning.Channel, liquidity uint64) *Channel {
 	}
 }
 
-func (c *Channel) computeFee(amount uint64) uint64 {
+func (c *Channel) ComputeFee(amount uint64) uint64 {
 	baseFee := c.BaseFeeMillisatoshi
 	result := baseFee
 	proportionalFee := ((amount / 1000) * c.FeePerMillionth) / 1000
@@ -33,27 +34,18 @@ func (c *Channel) GetHop(amount uint64, delay uint) glightning.RouteHop {
 		ShortChannelId: c.ShortChannelId,
 		MilliSatoshi:   amount,
 		Delay:          delay,
-		Direction:      c.getDirection(),
+		Direction:      c.GetDirection(),
 	}
 }
 
-func (c *Channel) getDirection() uint8 {
+func (c *Channel) GetDirection() uint8 {
 	if c.Source < c.Destination {
 		return 0
 	}
 	return 1
 }
 
-func all(v []bool) bool {
-	for _, b := range v {
-		if !b {
-			return false
-		}
-	}
-	return true
-}
-
-func (c *Channel) canUse(amount uint64) bool {
+func (c *Channel) CanUse(amount uint64) bool {
 	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
 	conditions := []bool{
 		c.Liquidity >= amount,
@@ -61,5 +53,5 @@ func (c *Channel) canUse(amount uint64) bool {
 		maxHtlcMsat >= amount,
 	}
 	log.Printf("conditions: %+v", conditions)
-	return all(conditions)
+	return util.All(conditions)
 }

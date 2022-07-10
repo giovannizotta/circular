@@ -46,6 +46,7 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	}
 
 	log.Printf("parameters validated, running rebalance\n")
+
 	//convert to msatoshi
 	r.Amount *= 1000
 	r.MaxPPM *= 1000
@@ -61,7 +62,7 @@ func (r *Rebalance) prependNode(route *graph.Route) {
 	bestScid := r.Node.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	}).ShortChannelId
-	channelId := bestScid + "/" + graph.GetDirection(r.Node.Id, r.Out)
+	channelId := bestScid + "/" + util.GetDirection(r.Node.Id, r.Out)
 	channel := r.Node.Graph.Channels[channelId]
 	route.Prepend(channel)
 }
@@ -70,7 +71,7 @@ func (r *Rebalance) appendNode(route *graph.Route) {
 	bestScid := r.Node.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	}).ShortChannelId
-	channelId := bestScid + "/" + graph.GetDirection(r.In, r.Node.Id)
+	channelId := bestScid + "/" + util.GetDirection(r.In, r.Node.Id)
 	channel := r.Node.Graph.Channels[channelId]
 	route.Append(channel)
 }
@@ -98,6 +99,7 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 }
 
 func (r *Rebalance) run() (string, error) {
+	defer util.TimeTrack(time.Now(), "rebalance.run")
 	log.Println("generating preimage/hash pair")
 	paymentSecret, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {

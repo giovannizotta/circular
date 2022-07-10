@@ -58,7 +58,7 @@ func getNewHop(channel *Channel, lastHop RouteHop) RouteHop {
 func (r *Route) add(channel *Channel, where int, f func(hop RouteHop) []RouteHop) {
 	targetHop := r.Hops[where]
 	r.Hops = f(getNewHop(channel, targetHop))
-	r.addFee(channel.computeFee(targetHop.MilliSatoshi), where+1)
+	r.addFee(channel.ComputeFee(targetHop.MilliSatoshi), where+1)
 	r.addDelay(channel.Delay, where+1)
 }
 
@@ -82,7 +82,7 @@ func (r *Route) ToLightningRoute() []glightning.RouteHop {
 			ShortChannelId: hop.Channel.ShortChannelId,
 			MilliSatoshi:   hop.MilliSatoshi,
 			Delay:          hop.Delay,
-			Direction:      hop.Channel.getDirection(),
+			Direction:      hop.Channel.GetDirection(),
 		})
 	}
 	return hops
