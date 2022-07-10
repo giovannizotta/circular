@@ -23,4 +23,5 @@ func OnSendPayFailure(sf *glightning.SendPayFailure) {
 // TODO: remove secret from db
 func OnSendPaySuccess(ss *glightning.SendPaySuccess) {
 	log.Printf("send pay success: %+v\n", ss)
+	node.GetNode().OnPaymentSuccess(ss)
 }

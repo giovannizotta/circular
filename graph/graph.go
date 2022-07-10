@@ -108,10 +108,9 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			if exclude[v] {
 				continue
 			}
-			log.Println("checking edge", v)
 			for _, scid := range edge {
 				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
-				log.Println("channel:", channel)
+				log.Println("channel:", channel.ShortChannelId)
 				if !channel.CanUse(amount) {
 					continue
 				}

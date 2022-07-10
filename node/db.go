@@ -50,3 +50,13 @@ func (d *PreimageStore) Get(key string) (string, error) {
 	}
 	return value, nil
 }
+
+func (d *PreimageStore) Delete(key string) error {
+	err := d.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete([]byte(key))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}

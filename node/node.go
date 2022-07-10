@@ -97,3 +97,10 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	s.Graph.Channels[oppositeChannelId].Liquidity =
 		s.Graph.Channels[oppositeChannelId].Satoshis*1000 - s.Graph.Channels[channelId].Liquidity
 }
+
+func (s *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {
+	err := s.DB.Delete(ss.PaymentHash)
+	if err != nil {
+		log.Println("error deleting payment hash from DB:", err)
+	}
+}
