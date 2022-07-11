@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	INITIAL_DELAY = 6
+	INITIAL_DELAY = 144
 )
 
 type RouteHop struct {
@@ -35,19 +35,7 @@ func (r *Route) Fee() uint64 {
 }
 
 func (r *Route) FeePPM() uint64 {
-	return (r.Fee() * 1000000000) / r.Amount
-}
-
-func (r *Route) addDelay(delay uint, upTo int) {
-	for i := 0; i < upTo; i++ {
-		r.Hops[i].Delay += delay
-	}
-}
-
-func (r *Route) addFee(fee uint64, upTo int) {
-	for i := 0; i < upTo; i++ {
-		r.Hops[i].MilliSatoshi += fee
-	}
+	return (r.Fee() * 1000000) / r.Amount
 }
 
 func (r *Route) Prepend(channel *Channel) {

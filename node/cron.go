@@ -28,7 +28,6 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 
 func (s *Node) refreshGraph() {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph")
-	log.Println("refreshing graph")
 
 	channelList, err := s.lightning.ListChannels()
 	if err != nil {
@@ -41,7 +40,6 @@ func (s *Node) refreshGraph() {
 
 func (s *Node) refreshPeers() {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers")
-	log.Println("refreshing peers")
 	newPeers := make(map[string]*glightning.Peer)
 	peers, err := s.lightning.ListPeers()
 	if err != nil {

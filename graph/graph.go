@@ -73,8 +73,8 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
 	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	log.Println("looking for a route from", src, "to", dst)
-	log.Println("graph has ", len(g.Channels), "channels")
-	log.Println("graph has ", len(g.Outbound), "nodes")
+	log.Println("graph has", len(g.Channels), "channels")
+	log.Println("graph has", len(g.Outbound), "nodes")
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31

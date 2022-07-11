@@ -3,7 +3,6 @@ package main
 import (
 	"circular/node"
 	"github.com/elementsproject/glightning/glightning"
-	"log"
 )
 
 // TODO: listen for `channel_state_changed` and `channel_opened`
@@ -16,11 +15,9 @@ func registerSubscriptions(p *glightning.Plugin) {
 }
 
 func OnSendPayFailure(sf *glightning.SendPayFailure) {
-	log.Printf("send pay failure: %+v\n", sf.Data)
 	node.GetNode().OnPaymentFailure(sf)
 }
 
 func OnSendPaySuccess(ss *glightning.SendPaySuccess) {
-	log.Printf("send pay success: %+v\n", ss)
 	node.GetNode().OnPaymentSuccess(ss)
 }
