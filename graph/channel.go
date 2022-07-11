@@ -8,7 +8,7 @@ import (
 )
 
 type Channel struct {
-	*glightning.Channel `json:"-"`
+	*glightning.Channel `json:"channel"`
 	Liquidity           uint64 `json:"liquidity"`
 }
 
@@ -20,9 +20,10 @@ func NewChannel(channel *glightning.Channel, liquidity uint64) *Channel {
 }
 
 func (c *Channel) ComputeFee(amount uint64) uint64 {
-	baseFee := c.BaseFeeMillisatoshi
-	result := baseFee
-	proportionalFee := ((amount / 1000) * c.FeePerMillionth) / 1000
+	result := c.BaseFeeMillisatoshi
+	// get the ceiling of the integer division
+	numerator := (amount / 1000) * c.FeePerMillionth
+	proportionalFee := ((numerator - 1) / 1000) + 1
 	result += proportionalFee
 	return result
 }

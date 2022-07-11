@@ -28,7 +28,10 @@ func LoadFromFile(filename string) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: add Outbound and Inbound
+
+	for _, c := range g.Channels {
+		g.AddChannel(c)
+	}
 	return g, nil
 }
 

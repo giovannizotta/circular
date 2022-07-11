@@ -4,6 +4,10 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 )
 
+const (
+	INITIAL_DELAY = 6
+)
+
 type RouteHop struct {
 	*Channel
 	MilliSatoshi uint64
@@ -46,32 +50,35 @@ func (r *Route) addFee(fee uint64, upTo int) {
 	}
 }
 
-func getNewHop(channel *Channel, lastHop RouteHop) RouteHop {
-	newHop := RouteHop{
-		Channel:      channel,
-		MilliSatoshi: lastHop.MilliSatoshi,
-		Delay:        lastHop.Delay,
-	}
-	return newHop
-}
-
-func (r *Route) add(channel *Channel, where int, f func(hop RouteHop) []RouteHop) {
-	targetHop := r.Hops[where]
-	r.Hops = f(getNewHop(channel, targetHop))
-	r.addFee(channel.ComputeFee(targetHop.MilliSatoshi), where+1)
-	r.addDelay(channel.Delay, where+1)
-}
-
 func (r *Route) Prepend(channel *Channel) {
-	r.add(channel, 0, func(hop RouteHop) []RouteHop {
-		return append([]RouteHop{hop}, r.Hops...)
-	})
+	firstHop := r.Hops[0]
+	firstHop.MilliSatoshi += firstHop.Channel.ComputeFee(firstHop.MilliSatoshi)
+	newFirstHop := RouteHop{
+		Channel:      channel,
+		MilliSatoshi: firstHop.MilliSatoshi,
+		Delay:        firstHop.Delay + firstHop.Channel.Delay,
+	}
+	r.Hops = append([]RouteHop{newFirstHop}, r.Hops...)
+}
+
+func (r *Route) recomputeFeeAndDelay() {
+	for i := len(r.Hops) - 2; i >= 0; i-- {
+		nextHop := r.Hops[i+1]
+		amountToForward := nextHop.MilliSatoshi
+		delay := nextHop.Delay
+		r.Hops[i].MilliSatoshi = amountToForward + nextHop.Channel.ComputeFee(amountToForward)
+		r.Hops[i].Delay = delay + nextHop.Channel.Delay
+	}
 }
 
 func (r *Route) Append(channel *Channel) {
-	r.add(channel, len(r.Hops)-1, func(hop RouteHop) []RouteHop {
-		return append(r.Hops, hop)
-	})
+	newLastHop := RouteHop{
+		Channel:      channel,
+		MilliSatoshi: r.Amount,
+		Delay:        INITIAL_DELAY,
+	}
+	r.Hops = append(r.Hops, newLastHop)
+	r.recomputeFeeAndDelay()
 }
 
 func (r *Route) ToLightningRoute() []glightning.RouteHop {

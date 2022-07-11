@@ -23,7 +23,7 @@ type Rebalance struct {
 	Out    string     `json:"out"`
 	Amount uint64     `json:"amount,omitempty"`
 	MaxPPM uint64     `json:"max_ppm,omitempty"`
-	Node   *node.Node `json:"self,omit"`
+	Node   *node.Node `json:"-"`
 }
 
 func (r *Rebalance) Name() string {
@@ -98,22 +98,37 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 	return route, nil
 }
 
-func (r *Rebalance) run() (string, error) {
-	defer util.TimeTrack(time.Now(), "rebalance.run")
+func (r *Rebalance) tryRoute() (*graph.Route, error) {
+	defer util.TimeTrack(time.Now(), "rebalance.tryRoute")
 	log.Println("generating preimage/hash pair")
 	paymentSecret, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	log.Println("searching for a route")
 	route, err := r.getRoute()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	log.Println("trying to send payment to route")
+	log.Println("Trying route with ppm ", route.FeePPM()/1000)
+	log.Println("Hops: ", len(route.Hops))
+	for _, hop := range route.Hops {
+		log.Println("Hop: ", hop.Destination)
+	}
+
 	_, err = r.Node.SendPay(route, paymentSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	return route, nil
+}
+
+func (r *Rebalance) run() (string, error) {
+	defer util.TimeTrack(time.Now(), "rebalance.run")
+
+	route, err := r.tryRoute()
 	if err != nil {
 		return "", err
 	}

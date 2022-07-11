@@ -73,6 +73,8 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
 	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	log.Println("looking for a route from", src, "to", dst)
+	log.Println("graph has ", len(g.Channels), "channels")
+	log.Println("graph has ", len(g.Outbound), "nodes")
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
@@ -80,7 +82,6 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		distance[u] = maxDistance
 	}
 	distance[dst] = 0
-	log.Printf("distance map: %+v", distance)
 
 	pq := make(PriorityQueue, 1, 16)
 	// Insert destination
@@ -97,7 +98,6 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		amount := pqItem.value.Amount
 		delay := pqItem.value.Delay
 		fee := pqItem.priority
-		log.Printf("processing node %s with amount %d and delay %d", u, amount, delay)
 		if u == src {
 			break
 		}
@@ -110,16 +110,13 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			}
 			for _, scid := range edge {
 				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
-				log.Println("channel:", channel.ShortChannelId)
 				if !channel.CanUse(amount) {
 					continue
 				}
-				log.Println("channel can be used")
 
 				channelFee := int(channel.ComputeFee(amount))
 				newDistance := distance[u] + channelFee
 				if newDistance < distance[v] {
-					log.Println("found new best fee coming from ", v, "with fee", newDistance)
 					distance[v] = newDistance
 					hop[v] = RouteHop{
 						channel,
