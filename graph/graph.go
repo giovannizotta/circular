@@ -12,8 +12,10 @@ import (
 const (
 	GRAPH_REFRESH        = "10m"
 	FILE                 = "graph.json"
-	AVERAGE_AGING_AMOUNT = 10000000 //10k sats
-	AGING_VARIANCE       = 5000000  //5k sats, basically age from 5k to 15k
+	AVERAGE_AGING_AMOUNT = 0 // the amount by which the liquidity belief is updated
+	AGING_VARIANCE       = 0 // the range (+/-) of the random amount added to the liquidity belief
+	// for example, for an AVERAGE_AGING_AMOUNT of 10k and an AGING_VARIANCE of 5k
+	// the liquidity belief will be updated by a random amount between 5k and 15k	(10k +- 5k)
 )
 
 // Edge contains All the SCIDs of the channels going from nodeA to nodeB
@@ -78,7 +80,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	log.Println("looking for a route from", src, "to", dst)
 	log.Println("graph has", len(g.Channels), "channels")
-	log.Println("graph has", len(g.Outbound), "nodes")
+	log.Println("graph has", len(g.Inbound), "nodes")
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
