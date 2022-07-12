@@ -21,14 +21,16 @@ type Route struct {
 	Source      string
 	Amount      uint64
 	Hops        []RouteHop
+	Graph       *Graph
 }
 
-func NewRoute(in string, out string, amount uint64, hops []RouteHop) *Route {
+func NewRoute(in string, out string, amount uint64, hops []RouteHop, graph *Graph) *Route {
 	return &Route{
 		Destination: in,
 		Source:      out,
 		Amount:      amount,
 		Hops:        hops,
+		Graph:       graph,
 	}
 }
 
@@ -88,19 +90,28 @@ func (r *Route) ToLightningRoute() []glightning.RouteHop {
 func (r *Route) String() string {
 	var result string
 	result += "Route from: " + r.Source[:8] + " to: " + r.Destination[:8] + "\n"
-	result += "Amount: " + strconv.FormatUint(r.Amount, 10) + "\n"
-	result += "Fee: " + strconv.FormatUint(r.Fee(), 10) + "\n"
+	result += "Amount: " + strconv.FormatUint(r.Amount/1000, 10) + "\n"
+	result += "Fee: " + strconv.FormatUint(r.Fee(), 10) + "msat\n"
 	result += "Fee PPM: " + strconv.FormatUint(r.FeePPM(), 10) + "\n"
 	result += "Hops: " + strconv.Itoa(len(r.Hops)) + "\n"
-	result += fmt.Sprintf("Hop %2d: from %s to %s, fee: %8d, ppm: %5d\n",
-		1, r.Hops[0].Source[:8], r.Hops[0].Destination[:8], 0, 0)
+
+	from := r.Hops[0].Source
+	if alias, ok := r.Graph.Aliases[from]; ok {
+		from = alias
+	}
+
+	result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d\n",
+		1, from, 0.0, 0)
 	for i := 1; i < len(r.Hops); i++ {
 		fee := r.Hops[i-1].MilliSatoshi - r.Hops[i].MilliSatoshi
 		feePPM := fee * 1000000 / r.Hops[i].MilliSatoshi
-		result += fmt.Sprintf("Hop %2d: from %s to %s, fee: %8d, ppm: %5d\n",
-			i+1,
-			r.Hops[i].Source[:8], r.Hops[i].Destination[:8],
-			fee, feePPM)
+		from = r.Hops[i].Source
+		if alias, ok := r.Graph.Aliases[from]; ok {
+			from = alias
+		}
+		result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d\n",
+			i+1, from,
+			float64(fee)/1000, feePPM)
 	}
 	return result
 }

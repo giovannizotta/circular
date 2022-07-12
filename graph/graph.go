@@ -29,6 +29,7 @@ type Graph struct {
 	Channels map[string]*Channel        `json:"channels"`
 	Outbound map[string]map[string]Edge `json:"-"`
 	Inbound  map[string]map[string]Edge `json:"-"`
+	Aliases  map[string]string          `json:"-"`
 }
 
 func NewGraph(filename string) *Graph {
@@ -37,6 +38,7 @@ func NewGraph(filename string) *Graph {
 	if err != nil {
 		g = &Graph{
 			Channels: make(map[string]*Channel),
+			Aliases:  make(map[string]string),
 		}
 	}
 	return g
@@ -66,7 +68,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 	if err != nil {
 		return nil, err
 	}
-	route := NewRoute(src, dst, amount, hops)
+	route := NewRoute(src, dst, amount, hops, g)
 	return route, nil
 }
 
@@ -146,9 +148,9 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	return hops, nil
 }
 
-func (g *Graph) Refresh(channelList []*glightning.Channel) {
+func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 	// we need to do NewChannel and not only update the liquidity because of gossip updates
-	defer util.TimeTrack(time.Now(), "graph.Refresh")
+	defer util.TimeTrack(time.Now(), "graph.RefreshChannels")
 	for _, c := range channelList {
 		var channel *Channel
 		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
@@ -177,5 +179,11 @@ func (g *Graph) updateOppositeChannel(c *Channel, liquidity uint64) {
 	if _, ok := g.Channels[oppositeChannelId]; ok {
 		oppositeChannel := g.Channels[oppositeChannelId]
 		oppositeChannel.Liquidity = (c.Satoshis * 1000) - liquidity
+	}
+}
+
+func (g *Graph) RefreshAliases(nodes []*glightning.Node) {
+	for _, n := range nodes {
+		g.Aliases[n.Id] = n.Alias
 	}
 }

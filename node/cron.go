@@ -34,7 +34,13 @@ func (s *Node) refreshGraph() {
 		log.Printf("error listing channels: %v\n", err)
 	}
 
-	s.Graph.Refresh(channelList)
+	s.Graph.RefreshChannels(channelList)
+
+	nodes, err := s.lightning.ListNodes()
+	if err != nil {
+		log.Printf("error listing nodes: %v\n", err)
+	}
+	s.Graph.RefreshAliases(nodes)
 	s.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
 }
 

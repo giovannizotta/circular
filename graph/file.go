@@ -23,6 +23,7 @@ func LoadFromFile(filename string) (*Graph, error) {
 	defer file.Close()
 	g := &Graph{
 		Channels: make(map[string]*Channel),
+		Aliases:  make(map[string]string),
 	}
 	err = json.NewDecoder(file).Decode(&g)
 	if err != nil {

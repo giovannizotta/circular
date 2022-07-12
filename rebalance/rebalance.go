@@ -22,12 +22,12 @@ type Rebalance struct {
 	In     string     `json:"in"`
 	Out    string     `json:"out"`
 	Amount uint64     `json:"amount,omitempty"`
-	MaxPPM uint64     `json:"max_ppm,omitempty"`
+	MaxPPM uint64     `json:"maxppm,omitempty"`
 	Node   *node.Node `json:"-"`
 }
 
 func (r *Rebalance) Name() string {
-	return "rebalance"
+	return "circular"
 }
 
 func (r *Rebalance) New() interface{} {
@@ -36,11 +36,11 @@ func (r *Rebalance) New() interface{} {
 
 func (r *Rebalance) Call() (jrpc2.Result, error) {
 	r.Node = node.GetNode()
-	log.Println("rebalance called")
+	log.Println("circular rebalance called")
 	log.Println("self: ", r.Node.Id)
 	log.Println("in:", r.In)
 	log.Println("out:", r.Out)
-	log.Println("amount:", r.Amount, "max_ppm:", r.MaxPPM)
+	log.Println("amount:", r.Amount, "maxppm:", r.MaxPPM)
 	if err := r.validateParameters(); err != nil {
 		return nil, err
 	}
@@ -106,11 +106,11 @@ func (r *Rebalance) tryRoute() (*graph.Route, error) {
 		return nil, err
 	}
 
-	log.Println("route: ", route)
+	log.Println(route)
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
-		return nil, errors.New(err.Error() + "\nfailed with route: " + route.String())
+		return nil, errors.New(err.Error() + "\n" + route.String())
 	}
 
 	return route, nil
