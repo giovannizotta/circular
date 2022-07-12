@@ -48,7 +48,7 @@ func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 		log.Fatalln(err)
 	}
 	s.Id = info.Id
-	s.Graph = graph.NewGraph(CIRCULAR_DIR + graph.FILE)
+	s.Graph = graph.NewGraph(CIRCULAR_DIR + "/" + graph.FILE)
 	s.refreshGraph()
 	s.refreshPeers()
 	s.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)

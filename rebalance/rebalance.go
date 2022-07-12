@@ -47,7 +47,6 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 
 	//convert to msatoshi
 	r.Amount *= 1000
-	r.MaxPPM *= 1000
 
 	result, err := r.run()
 	if err != nil {
@@ -90,7 +89,7 @@ func (r *Rebalance) getRoute() (*graph.Route, error) {
 	if route.FeePPM() > r.MaxPPM {
 		return nil, errors.New(fmt.Sprintf("route too expensive. "+
 			"Cheapest route found was %d ppm, but max_ppm is %d",
-			route.FeePPM(), r.MaxPPM/1000))
+			route.FeePPM(), r.MaxPPM))
 	}
 
 	return route, nil
@@ -107,22 +106,11 @@ func (r *Rebalance) tryRoute() (*graph.Route, error) {
 		return nil, err
 	}
 
-	log.Println("Trying route with ppm ", route.FeePPM())
-	log.Println("Hops: ", len(route.Hops))
-	log.Printf("Hop %2d: from %s to %s, fee: %8d, ppm: %5d",
-		1, route.Hops[0].Source[:8], route.Hops[0].Destination[:8], 0, 0)
-	for i := 1; i < len(route.Hops); i++ {
-		fee := route.Hops[i-1].MilliSatoshi - route.Hops[i].MilliSatoshi
-		feePPM := fee * 1000000 / route.Hops[i].MilliSatoshi
-		log.Printf("Hop %2d: from %s to %s, fee: %8d, ppm: %5d",
-			i+1,
-			route.Hops[i].Source[:8], route.Hops[i].Destination[:8],
-			fee, feePPM)
-	}
+	log.Println("route: ", route)
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err.Error() + "\nfailed with route: " + route.String())
 	}
 
 	return route, nil
@@ -133,10 +121,9 @@ func (r *Rebalance) run() (string, error) {
 
 	route, err := r.tryRoute()
 	if err != nil {
-		return "", err
+		return err.Error(), nil
 	}
 
-	// TODO: after successful rebalance, clean PreimageStore and refresh channel balances
 	return fmt.Sprintf(""+
 		"successfully rebalanced %d sats "+
 		"from %s to %s at %d ppm. Total fees paid: %.3f sats",
