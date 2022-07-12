@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	GRAPH_REFRESH = "10m"
-	FILE          = "graph.json"
+	GRAPH_REFRESH        = "10m"
+	FILE                 = "graph.json"
+	AVERAGE_AGING_AMOUNT = 10000000 //10k sats
+	AGING_VARIANCE       = 5000000  //5k sats, basically age from 5k to 15k
 )
 
 // Edge contains All the SCIDs of the channels going from nodeA to nodeB
@@ -145,17 +147,29 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 }
 
 func (g *Graph) Refresh(channelList []*glightning.Channel) {
+	// we need to do NewChannel and not only update the liquidity because of gossip updates
 	defer util.TimeTrack(time.Now(), "graph.Refresh")
 	for _, c := range channelList {
 		var channel *Channel
 		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
 		// if the channel did not exist prior to this refresh estimate its initial liquidity to be 50/50
+		perfectBalance := uint64(0.5 * float64(c.Satoshis*1000))
 		if _, ok := g.Channels[channelId]; !ok {
-			channel = NewChannel(c, uint64(0.5*float64(c.Satoshis*1000)))
+			channel = NewChannel(c, perfectBalance)
 			g.AddChannel(channel)
 		} else {
-			channel = NewChannel(c, g.Channels[channelId].Liquidity)
+			liquidity := g.getLiquidityAfterAging(channelId, perfectBalance)
+			//update opposite channel
+			oppositeChannelId := c.ShortChannelId + "/" + util.GetDirection(c.Destination, c.Source)
+			oppositeChannel := g.Channels[oppositeChannelId]
+			oppositeChannel.Liquidity = (c.Satoshis * 1000) - liquidity
+			channel = NewChannel(c, liquidity)
 		}
 		g.Channels[channelId] = channel
 	}
+}
+
+func (g *Graph) getLiquidityAfterAging(channelId string, perfectBalance uint64) uint64 {
+	aging := util.RandRange(AVERAGE_AGING_AMOUNT-AGING_VARIANCE, AVERAGE_AGING_AMOUNT+AGING_VARIANCE)
+	return util.Max(g.Channels[channelId].Liquidity+aging, perfectBalance)
 }

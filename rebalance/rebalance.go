@@ -119,10 +119,6 @@ func (r *Rebalance) tryRoute() (*graph.Route, error) {
 			route.Hops[i].Source[:8], route.Hops[i].Destination[:8],
 			fee, feePPM)
 	}
-	//log.Printf("Hop %d: from %s to %s, fee: %8d",
-	//	len(route.Hops),
-	//	route.Hops[len(route.Hops)-1].Source[:8], route.Hops[len(route.Hops)-1].Destination[:8],
-	//	route.Hops[len(route.Hops)-1].MilliSatoshi-r.Amount)
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
