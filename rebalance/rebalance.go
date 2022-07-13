@@ -17,6 +17,7 @@ const (
 	NORMAL         = "CHANNELD_NORMAL"
 	DEFAULT_AMOUNT = 200000
 	DEFAULT_PPM    = 100
+	ATTEMPTS       = 100
 )
 
 type Rebalance struct {
@@ -49,17 +50,20 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < ATTEMPTS; i++ {
+		log.Println("===================== ATTEMPT", i+1, "=====================")
 		result, ok := r.run()
 		if ok {
-			return NewResult(result + " after " + strconv.Itoa(i) + " attempts"), nil
+			result += " after " + strconv.Itoa(i) + " attempts"
+			log.Println(result)
+			return NewResult(result), nil
 		}
 		if result != "TEMPORARY_FAILURE" {
 			return NewResult(result), nil
 		}
 	}
 
-	return NewResult("rebalance failed after 100 attempts"), nil
+	return NewResult("rebalance failed after" + strconv.Itoa(ATTEMPTS) + " attempts"), nil
 }
 
 func (r *Rebalance) prependNode(route *graph.Route) {

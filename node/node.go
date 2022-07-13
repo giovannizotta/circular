@@ -84,8 +84,6 @@ func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		log.Println(err)
 		return nil, err
 	}
-	log.Printf("payment result: %+v\n", result)
-	log.Println("payment status: ", result.Status)
 	return result, nil
 }
 
