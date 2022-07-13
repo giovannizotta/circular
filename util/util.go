@@ -18,6 +18,13 @@ func GetDirection(from, to string) string {
 	return "0"
 }
 
+func Min(n1, n2 uint64) uint64 {
+	if n1 < n2 {
+		return n1
+	}
+	return n2
+}
+
 func Max(n1, n2 uint64) uint64 {
 	if n1 > n2 {
 		return n1
@@ -26,5 +33,11 @@ func Max(n1, n2 uint64) uint64 {
 }
 
 func RandRange(min, max uint64) uint64 {
+	if min == max {
+		return min
+	}
+	if max < min {
+		return 0
+	}
 	return min + (uint64(rand.Int63()) % (max - min))
 }

@@ -94,8 +94,6 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	if err != nil {
 		log.Println("error deleting payment hash from DB:", err)
 	}
-	// TODO: if the payment failed on the hop towards the last node and ourselves, we should "panic"
-	// or rather, avoid sending the payment in the first place
 	direction := strconv.Itoa(sf.Data.ErringDirection)
 	oppositeDirection := strconv.Itoa(sf.Data.ErringDirection ^ 0x1)
 	channelId := sf.Data.ErringChannel + "/" + direction

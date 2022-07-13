@@ -157,14 +157,11 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 		var channel *Channel
 		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
 		// if the channel did not exist prior to this refresh estimate its initial liquidity to be 50/50
-		perfectBalance := uint64(0.5 * float64(c.Satoshis*1000))
 		if _, ok := g.Channels[channelId]; !ok {
-			channel = NewChannel(c, perfectBalance)
+			channel = NewChannel(c, uint64(0.5*float64(c.Satoshis*1000)))
 			g.AddChannel(channel)
 		} else {
-			liquidity := g.getLiquidityAfterAging(channelId, perfectBalance)
-			channel = NewChannel(c, liquidity)
-			g.updateOppositeChannel(channel, liquidity)
+			channel = NewChannel(c, g.Channels[channelId].Liquidity)
 		}
 		g.Channels[channelId] = channel
 	}
@@ -172,7 +169,7 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 
 func (g *Graph) getLiquidityAfterAging(channelId string, perfectBalance uint64) uint64 {
 	aging := util.RandRange(AVERAGE_AGING_AMOUNT-AGING_VARIANCE, AVERAGE_AGING_AMOUNT+AGING_VARIANCE)
-	return util.Max(g.Channels[channelId].Liquidity+aging, perfectBalance)
+	return util.Min(g.Channels[channelId].Liquidity+aging, perfectBalance)
 }
 
 func (g *Graph) updateOppositeChannel(c *Channel, liquidity uint64) {
