@@ -4,9 +4,7 @@ import (
 	"circular/graph"
 	"circular/node"
 	"circular/util"
-	"errors"
 	"fmt"
-	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 	"log"
 	"strconv"
@@ -52,13 +50,19 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
+	maxHops := 3
 	for i := 1; i <= r.Attempts; i++ {
 		log.Println("===================== ATTEMPT", i, "=====================")
-		result, ok := r.run()
+		result, ok := r.run(maxHops)
 		if ok {
 			result += " after " + strconv.Itoa(i) + " attempts"
 			log.Println(result)
 			return NewResult(result), nil
+		}
+		if result == graph.ErrNoRoute.Error() {
+			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
+			maxHops += 1
+			continue
 		}
 		// TODO: handle case where the peer channel has gone offline
 		if result != "TEMPORARY_FAILURE" {
@@ -66,74 +70,13 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		}
 	}
 
-	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts+1) + " attempts"), nil
+	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts) + " attempts"), nil
 }
 
-func (r *Rebalance) prependNode(route *graph.Route) {
-	bestScid := r.Node.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
-		return channel.SpendableMilliSatoshi
-	}).ShortChannelId
-	channelId := bestScid + "/" + util.GetDirection(r.Node.Id, r.Out)
-	channel := r.Node.Graph.Channels[channelId]
-	route.Prepend(channel)
-}
-
-func (r *Rebalance) appendNode(route *graph.Route) {
-	bestScid := r.Node.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
-		return channel.ReceivableMilliSatoshi
-	}).ShortChannelId
-	channelId := bestScid + "/" + util.GetDirection(r.In, r.Node.Id)
-	channel := r.Node.Graph.Channels[channelId]
-	route.Append(channel)
-}
-
-func (r *Rebalance) getRoute() (*graph.Route, error) {
-	defer util.TimeTrack(time.Now(), "rebalance.getRoute")
-	exclude := make(map[string]bool)
-	exclude[r.Node.Id] = true
-
-	route, err := r.Node.Graph.GetRoute(r.Out, r.In, r.Amount, exclude)
-	if err != nil {
-		return nil, err
-	}
-
-	r.prependNode(route)
-	r.appendNode(route)
-
-	if route.FeePPM() > r.MaxPPM {
-		return nil, errors.New(fmt.Sprintf("route too expensive. "+
-			"Cheapest route found was %d ppm, but max_ppm is %d",
-			route.FeePPM(), r.MaxPPM))
-	}
-
-	return route, nil
-}
-
-func (r *Rebalance) tryRoute() (*graph.Route, error) {
-	paymentSecret, err := r.Node.GeneratePreimageHashPair()
-	if err != nil {
-		return nil, err
-	}
-
-	route, err := r.getRoute()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println(route)
-
-	_, err = r.Node.SendPay(route, paymentSecret)
-	if err != nil {
-		return nil, errors.New("TEMPORARY_FAILURE")
-	}
-
-	return route, nil
-}
-
-func (r *Rebalance) run() (string, bool) {
+func (r *Rebalance) run(maxHops int) (string, bool) {
 	defer util.TimeTrack(time.Now(), "rebalance.run")
 
-	route, err := r.tryRoute()
+	route, err := r.tryRoute(maxHops)
 	if err != nil {
 		return err.Error(), false
 	}

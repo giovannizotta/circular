@@ -2,19 +2,15 @@ package graph
 
 import (
 	"circular/util"
-	"container/heap"
-	"errors"
 	"github.com/elementsproject/glightning/glightning"
-	"log"
 	"time"
 )
 
 const (
 	GRAPH_REFRESH        = "10m"
 	FILE                 = "graph.json"
-	HOP_PENALTY          = 100000 // hop penalty for dijkstra - long routes are likely to fail
-	AVERAGE_AGING_AMOUNT = 0      // the amount by which the liquidity belief is updated
-	AGING_VARIANCE       = 0      // the range (+/-) of the random amount added to the liquidity belief
+	AVERAGE_AGING_AMOUNT = 0 // the amount by which the liquidity belief is updated
+	AGING_VARIANCE       = 0 // the range (+/-) of the random amount added to the liquidity belief
 	// for example, for an AVERAGE_AGING_AMOUNT of 10k and an AGING_VARIANCE of 5k
 	// the liquidity belief will be updated by a random amount between 5k and 15k	(10k +- 5k)
 )
@@ -59,91 +55,6 @@ func (g *Graph) AddChannel(c *Channel) {
 	allocate(&g.Inbound, c.Destination, c.Source)
 	g.Outbound[c.Source][c.Destination] = append(g.Outbound[c.Source][c.Destination], c.ShortChannelId)
 	g.Inbound[c.Destination][c.Source] = append(g.Inbound[c.Destination][c.Source], c.ShortChannelId)
-}
-
-func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool) (*Route, error) {
-	hops, err := g.dijkstra(src, dst, amount, exclude)
-	if err != nil {
-		return nil, err
-	}
-	route := NewRoute(src, dst, amount, hops, g)
-	return route, nil
-}
-
-func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool) ([]RouteHop, error) {
-	// start from the destination and find the source so that we can compute fees
-	// TODO: consider that 32bits fees can be a problem but the api does it in that way
-	defer util.TimeTrack(time.Now(), "graph.dijkstra")
-	log.Println("looking for a route from", src, "to", dst)
-	log.Println("graph has", len(g.Channels), "channels")
-	log.Println("graph has", len(g.Inbound), "nodes")
-	distance := make(map[string]int)
-	hop := make(map[string]RouteHop)
-	maxDistance := 1 << 31
-	for u := range g.Inbound {
-		distance[u] = maxDistance
-	}
-	distance[dst] = 0
-
-	pq := make(PriorityQueue, 1, 16)
-	// Insert destination
-	pq[0] = &Item{value: &PqItem{
-		Node:   dst,
-		Amount: amount,
-		Delay:  0,
-	}, priority: 0}
-	heap.Init(&pq)
-
-	for pq.Len() > 0 {
-		pqItem := heap.Pop(&pq).(*Item)
-		u := pqItem.value.Node
-		amount := pqItem.value.Amount
-		delay := pqItem.value.Delay
-		fee := pqItem.priority
-		if u == src {
-			break
-		}
-		if fee > distance[u] {
-			continue
-		}
-		for v, edge := range g.Inbound[u] {
-			if exclude[v] {
-				continue
-			}
-			for _, scid := range edge {
-				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
-				if !channel.CanUse(amount) {
-					continue
-				}
-
-				channelFee := int(channel.ComputeFee(amount))
-				newDistance := distance[u] + channelFee + HOP_PENALTY
-				if newDistance < distance[v] {
-					distance[v] = newDistance
-					hop[v] = RouteHop{
-						channel,
-						amount,
-						delay,
-					}
-					heap.Push(&pq, &Item{value: &PqItem{
-						Node:   v,
-						Amount: amount + uint64(channelFee),
-						Delay:  delay + channel.Delay,
-					}, priority: newDistance})
-				}
-			}
-		}
-	}
-	if distance[src] == maxDistance {
-		log.Println("no route found")
-		return nil, errors.New("no route found")
-	}
-	// now we have the hop map, we can build the hops
-	hops := make([]RouteHop, 0, 10)
-	for u := src; u != dst; u = hop[u].Channel.Destination {
-		hops = append(hops, hop[u])
-	}
-	return hops, nil
 }
 
 func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {

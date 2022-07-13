@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"errors"
 	"fmt"
 	"github.com/elementsproject/glightning/glightning"
 	"strconv"
@@ -8,6 +9,10 @@ import (
 
 const (
 	INITIAL_DELAY = 144
+)
+
+var (
+	ErrNoRoute = errors.New("no route")
 )
 
 type RouteHop struct {

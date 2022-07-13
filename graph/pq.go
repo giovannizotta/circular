@@ -8,6 +8,7 @@ type PqItem struct {
 	Node   string
 	Amount uint64
 	Delay  uint
+	Hops   int
 }
 
 // Priority queue implementation from https://pkg.go.dev/container/heap#example__priorityQueue
