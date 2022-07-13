@@ -52,14 +52,15 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
-	for i := 0; i < r.Attempts; i++ {
-		log.Println("===================== ATTEMPT", i+1, "=====================")
+	for i := 1; i <= r.Attempts; i++ {
+		log.Println("===================== ATTEMPT", i, "=====================")
 		result, ok := r.run()
 		if ok {
 			result += " after " + strconv.Itoa(i) + " attempts"
 			log.Println(result)
 			return NewResult(result), nil
 		}
+		// TODO: handle case where the peer channel has gone offline
 		if result != "TEMPORARY_FAILURE" {
 			return NewResult(result), nil
 		}

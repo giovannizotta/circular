@@ -35,16 +35,11 @@ type Graph struct {
 	Aliases  map[string]string          `json:"-"`
 }
 
-func NewGraph(filename string) *Graph {
-	var g *Graph
-	g, err := LoadFromFile(filename)
-	if err != nil {
-		g = &Graph{
-			Channels: make(map[string]*Channel),
-			Aliases:  make(map[string]string),
-		}
+func NewGraph() *Graph {
+	return &Graph{
+		Channels: make(map[string]*Channel),
+		Aliases:  make(map[string]string),
 	}
-	return g
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {

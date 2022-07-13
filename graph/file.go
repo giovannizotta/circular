@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func LoadFromFile(filename string) (*Graph, error) {
+func LoadFromFile(filename string) *Graph {
 	defer util.TimeTrack(time.Now(), "graph.LoadFromFile")
 	file, err := os.Open(filename)
 	if err != nil {
@@ -17,23 +17,20 @@ func LoadFromFile(filename string) (*Graph, error) {
 		file, err = os.Open(filename + ".old")
 		if err != nil {
 			log.Println("unable to load any old version of the file: ", err)
-			return nil, err
+			return nil
 		}
 	}
 	defer file.Close()
-	g := &Graph{
-		Channels: make(map[string]*Channel),
-		Aliases:  make(map[string]string),
-	}
+	g := NewGraph()
 	err = json.NewDecoder(file).Decode(&g)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	for _, c := range g.Channels {
 		g.AddChannel(c)
 	}
-	return g, nil
+	return g
 }
 
 func (g *Graph) SaveToFile(dir, filename string) {

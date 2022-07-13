@@ -3,6 +3,7 @@ package node
 import (
 	"circular/graph"
 	"circular/util"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
@@ -48,7 +49,11 @@ func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 		log.Fatalln(err)
 	}
 	s.Id = info.Id
-	s.Graph = graph.NewGraph(CIRCULAR_DIR + "/" + graph.FILE)
+	s.Graph = graph.NewGraph()
+	g := graph.LoadFromFile(CIRCULAR_DIR + "/" + graph.FILE)
+	if g != nil {
+		s.Graph = g
+	}
 	s.refreshGraph()
 	s.refreshPeers()
 	s.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
@@ -87,10 +92,22 @@ func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	return result, nil
 }
 
-func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
-	err := s.DB.Delete(sf.Data.PaymentHash)
+func (s *Node) deleteIfOurs(paymentHash string) error {
+	_, err := s.DB.Get(paymentHash)
+	if err == badger.ErrKeyNotFound {
+		return err // this payment was not made by us
+	}
+	err = s.DB.Delete(paymentHash)
 	if err != nil {
-		log.Println("error deleting payment hash from DB:", err)
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
+	if err := s.deleteIfOurs(sf.Data.PaymentHash); err != nil {
+		return
 	}
 	direction := strconv.Itoa(sf.Data.ErringDirection)
 	oppositeDirection := strconv.Itoa(sf.Data.ErringDirection ^ 0x1)
@@ -106,8 +123,5 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 }
 
 func (s *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {
-	err := s.DB.Delete(ss.PaymentHash)
-	if err != nil {
-		log.Println("error deleting payment hash from DB:", err)
-	}
+	s.deleteIfOurs(ss.PaymentHash)
 }
