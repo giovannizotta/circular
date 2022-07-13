@@ -12,8 +12,9 @@ import (
 const (
 	GRAPH_REFRESH        = "10m"
 	FILE                 = "graph.json"
-	AVERAGE_AGING_AMOUNT = 0 // the amount by which the liquidity belief is updated
-	AGING_VARIANCE       = 0 // the range (+/-) of the random amount added to the liquidity belief
+	HOP_PENALTY          = 100000 // hop penalty for dijkstra - long routes are likely to fail
+	AVERAGE_AGING_AMOUNT = 0      // the amount by which the liquidity belief is updated
+	AGING_VARIANCE       = 0      // the range (+/-) of the random amount added to the liquidity belief
 	// for example, for an AVERAGE_AGING_AMOUNT of 10k and an AGING_VARIANCE of 5k
 	// the liquidity belief will be updated by a random amount between 5k and 15k	(10k +- 5k)
 )
@@ -121,7 +122,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 				}
 
 				channelFee := int(channel.ComputeFee(amount))
-				newDistance := distance[u] + channelFee
+				newDistance := distance[u] + channelFee + HOP_PENALTY
 				if newDistance < distance[v] {
 					distance[v] = newDistance
 					hop[v] = RouteHop{
