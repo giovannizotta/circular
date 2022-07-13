@@ -14,18 +14,19 @@ import (
 )
 
 const (
-	NORMAL         = "CHANNELD_NORMAL"
-	DEFAULT_AMOUNT = 200000
-	DEFAULT_PPM    = 100
-	ATTEMPTS       = 100
+	NORMAL           = "CHANNELD_NORMAL"
+	DEFAULT_AMOUNT   = 200000000
+	DEFAULT_PPM      = 100
+	DEFAULT_ATTEMPTS = 10
 )
 
 type Rebalance struct {
-	In     string     `json:"in"`
-	Out    string     `json:"out"`
-	Amount uint64     `json:"amount,omitempty"`
-	MaxPPM uint64     `json:"maxppm,omitempty"`
-	Node   *node.Node `json:"-"`
+	Out      string     `json:"out"`
+	In       string     `json:"in"`
+	Amount   uint64     `json:"amount,omitempty"`
+	MaxPPM   uint64     `json:"maxppm,omitempty"`
+	Attempts int        `json:"attempts,omitempty"`
+	Node     *node.Node `json:"-"`
 }
 
 func (r *Rebalance) Name() string {
@@ -46,11 +47,12 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	log.Println("in:", r.In)
 	log.Println("out:", r.Out)
 	log.Println("amount:", r.Amount, "maxppm:", r.MaxPPM)
+	log.Println("attempts:", r.Attempts)
 	if err := r.validateParameters(); err != nil {
 		return nil, err
 	}
 
-	for i := 0; i < ATTEMPTS; i++ {
+	for i := 0; i < r.Attempts; i++ {
 		log.Println("===================== ATTEMPT", i+1, "=====================")
 		result, ok := r.run()
 		if ok {
@@ -63,7 +65,7 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		}
 	}
 
-	return NewResult("rebalance failed after" + strconv.Itoa(ATTEMPTS) + " attempts"), nil
+	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts+1) + " attempts"), nil
 }
 
 func (r *Rebalance) prependNode(route *graph.Route) {

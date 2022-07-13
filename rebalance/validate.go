@@ -64,6 +64,10 @@ func (r *Rebalance) validateParameters() error {
 		r.MaxPPM = DEFAULT_PPM
 		log.Println("maxPPM not provided, using default value", r.MaxPPM)
 	}
+	if r.Attempts <= 0 {
+		r.Attempts = DEFAULT_ATTEMPTS
+		log.Println("attempts not provided, using default value", r.Attempts)
+	}
 	err := r.validatePeerParameters()
 	if err != nil {
 		return err

@@ -14,7 +14,6 @@ var (
 
 // This is called after the plugin starts up successfully
 func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
-	log.Printf("successfully init'd! %s\n", config.RpcFile)
 	lightning = glightning.NewLightning()
 	err := lightning.StartUp(config.RpcFile, config.LightningDir)
 	if err != nil {
@@ -22,6 +21,7 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 	}
 
 	node.GetNode().Init(lightning, options, config)
+	log.Printf("circular successfully init'd!\n")
 }
 
 func main() {
