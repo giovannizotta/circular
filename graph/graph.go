@@ -3,6 +3,9 @@ package graph
 import (
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
+	"log"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,7 +29,6 @@ type Edge []string
 // To access a channel via channelId (scid/direction). use: g.Channels[channelId]
 type Graph struct {
 	Channels map[string]*Channel        `json:"channels"`
-	Outbound map[string]map[string]Edge `json:"-"`
 	Inbound  map[string]map[string]Edge `json:"-"`
 	Aliases  map[string]string          `json:"-"`
 }
@@ -51,9 +53,7 @@ func allocate(links *map[string]map[string]Edge, from, to string) {
 }
 
 func (g *Graph) AddChannel(c *Channel) {
-	allocate(&g.Outbound, c.Source, c.Destination)
 	allocate(&g.Inbound, c.Destination, c.Source)
-	g.Outbound[c.Source][c.Destination] = append(g.Outbound[c.Source][c.Destination], c.ShortChannelId)
 	g.Inbound[c.Destination][c.Source] = append(g.Inbound[c.Destination][c.Source], c.ShortChannelId)
 }
 
@@ -72,6 +72,7 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 		}
 		g.Channels[channelId] = channel
 	}
+	g.PrintStats()
 }
 
 func (g *Graph) getLiquidityAfterAging(channelId string, perfectBalance uint64) uint64 {
@@ -92,4 +93,29 @@ func (g *Graph) RefreshAliases(nodes []*glightning.Node) {
 	for _, n := range nodes {
 		g.Aliases[n.Id] = n.Alias
 	}
+}
+
+func (g *Graph) PrintStats() {
+	activeChannels := 0
+	atLeast200kLiquidity := 0
+	atLeast200kMaxHtlc := 0
+	for _, c := range g.Channels {
+		if c.IsActive {
+			activeChannels++
+		}
+		if c.Liquidity >= 200000000 {
+			atLeast200kLiquidity++
+		}
+		maxHtlc, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+		if maxHtlc >= 200000000 {
+			atLeast200kMaxHtlc++
+		}
+
+	}
+	log.Println("Graph stats:")
+	log.Println("graph has", len(g.Inbound), "nodes")
+	log.Println("graph has", len(g.Channels), "channels")
+	log.Println("graph has", activeChannels, "active channels")
+	log.Println("graph has", atLeast200kLiquidity, "channels believed to have at least 200k liquidity")
+	log.Println("graph has", atLeast200kMaxHtlc, "channels with at least 200k max htlc")
 }
