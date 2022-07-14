@@ -3,8 +3,6 @@ package rebalance
 import (
 	"circular/graph"
 	"circular/util"
-	"errors"
-	"fmt"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"time"
@@ -42,9 +40,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	r.appendNode(route)
 
 	if route.FeePPM() > r.MaxPPM {
-		return nil, errors.New(fmt.Sprintf("route too expensive. "+
-			"Cheapest route found was %d ppm, but max_ppm is %d",
-			route.FeePPM(), r.MaxPPM))
+		return nil, NewRouteTooExpensiveError(route.FeePPM(), r.MaxPPM)
 	}
 
 	return route, nil
@@ -65,7 +61,7 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
-		return nil, errors.New("TEMPORARY_FAILURE")
+		return nil, TemporaryFailureError
 	}
 
 	return route, nil

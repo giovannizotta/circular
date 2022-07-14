@@ -4,6 +4,7 @@ import (
 	"circular/graph"
 	"circular/node"
 	"circular/util"
+	"errors"
 	"fmt"
 	"github.com/elementsproject/glightning/jrpc2"
 	"log"
@@ -51,38 +52,45 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	}
 
 	maxHops := 3
+	var err error
+	var result string
 	for i := 1; i <= r.Attempts; i++ {
 		log.Println("===================== ATTEMPT", i, "=====================")
-		result, ok := r.run(maxHops)
-		if ok {
+		result, err = r.run(maxHops)
+		if err == nil {
 			result += " after " + strconv.Itoa(i) + " attempts"
 			log.Println(result)
 			return NewResult(result), nil
 		}
-		if result == graph.ErrNoRoute.Error() {
+		if err == graph.ErrNoRoute {
 			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}
+		if errors.As(err, &RouteTooExpensiveError{}) {
+			log.Println(err, "increasing max hops to ", maxHops+1)
+			maxHops += 1
+			continue
+		}
 		// TODO: handle case where the peer channel has gone offline
-		if result != "TEMPORARY_FAILURE" {
+		if err != TemporaryFailureError {
 			return NewResult(result), nil
 		}
 	}
 
-	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts) + " attempts"), nil
+	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts) + " attempts, last error: " + err.Error()), nil
 }
 
-func (r *Rebalance) run(maxHops int) (string, bool) {
+func (r *Rebalance) run(maxHops int) (string, error) {
 	defer util.TimeTrack(time.Now(), "rebalance.run")
 
 	route, err := r.tryRoute(maxHops)
 	if err != nil {
-		return err.Error(), false
+		return "", err
 	}
 
 	return fmt.Sprintf(""+
 		"successfully rebalanced %d sats "+
 		"from %s to %s at %d ppm. Total fees paid: %.3f sats",
-		r.Amount/1000, r.Out[:8], r.In[:8], route.FeePPM(), float64(route.Fee())/1000), true
+		r.Amount/1000, r.Out[:8], r.In[:8], route.FeePPM(), float64(route.Fee())/1000), nil
 }
