@@ -40,6 +40,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	r.appendNode(route)
 
 	if route.FeePPM() > r.MaxPPM {
+		log.Println("best route found was: ", route)
 		return nil, NewRouteTooExpensiveError(route.FeePPM(), r.MaxPPM)
 	}
 
