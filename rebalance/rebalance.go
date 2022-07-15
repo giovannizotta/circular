@@ -15,6 +15,7 @@ const (
 	DEFAULT_AMOUNT   = 200000000
 	DEFAULT_PPM      = 100
 	DEFAULT_ATTEMPTS = 1
+	MAX_HOPS         = 15
 )
 
 type Rebalance struct {
@@ -53,6 +54,9 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	var err error
 	var result string
 	for i := 1; i <= r.Attempts; {
+		if maxHops > MAX_HOPS {
+			return NewResult("unable to find a route with less than " + strconv.Itoa(MAX_HOPS) + "hops"), nil
+		}
 		log.Println("===================== ATTEMPT", i, "=====================")
 		result, err = r.run(maxHops)
 		// success
