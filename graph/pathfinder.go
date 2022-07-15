@@ -20,6 +20,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool, maxHops int) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
+	zerofeerouting := "038fe1bd966b5cb0545963490c631eaa1924e2c4c0ea4e7dcb5d4582a1e7f2f1a5"
 	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	log.Println("looking for a route from", src, "to", dst)
 	distance := make(map[string]int)
@@ -47,12 +48,18 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		delay := pqItem.value.Delay
 		hops := pqItem.value.Hops
 		priority := pqItem.priority
-		log.Println("visiting", g.Aliases[u], "with priority", priority)
+		if u == zerofeerouting {
+			log.Println("visiting", g.Aliases[u], "with priority", priority)
+		}
 		if priority > distance[u] {
-			log.Println(g.Aliases[u], "is too far away, there's a path of distance", distance[u])
+			if u == zerofeerouting {
+				log.Println(g.Aliases[u], "is too far away, there's a path of distance", distance[u])
+			}
 			continue
 		}
-		log.Println(g.Aliases[u], "is now being visited at distance", distance[u])
+		if u == zerofeerouting {
+			log.Println(g.Aliases[u], "is now being visited at distance", distance[u])
+		}
 		if u == src {
 			break
 		}
@@ -65,11 +72,20 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			}
 			for _, scid := range edge {
 				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
+				if v == zerofeerouting {
+					log.Println("considering channel from", g.Aliases[u], "to", g.Aliases[v], "with scid ", scid)
+				}
 				if !channel.CanForward(amount) {
+					if v == zerofeerouting {
+						log.Println("channel is not usable")
+					}
 					continue
 				}
 				channelFee := channel.ComputeFee(amount)
 				newDistance := distance[u] + int(channelFee)
+				if v == zerofeerouting {
+					log.Println("channel is usable with fee", channelFee, "and new distance towards zfr of", newDistance)
+				}
 				if newDistance < distance[v] {
 					distance[v] = newDistance
 					hop[v] = RouteHop{
@@ -77,7 +93,9 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 						amount + channelFee,
 						delay + channel.Delay,
 					}
-					log.Println("adding", g.Aliases[v], "with priority", newDistance)
+					if v == zerofeerouting {
+						log.Println("adding", g.Aliases[v], "with priority", newDistance)
+					}
 					heap.Push(&pq, &Item{value: &PqItem{
 						Node:   v,
 						Amount: amount + channelFee,
