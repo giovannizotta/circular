@@ -12,6 +12,7 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 	if err != nil {
 		return nil, err
 	}
+
 	route := NewRoute(src, dst, amount, hops, g)
 	return route, nil
 }
@@ -70,8 +71,8 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 					distance[v] = newDistance
 					hop[v] = RouteHop{
 						channel,
-						amount,
-						delay,
+						amount + channelFee,
+						delay + channel.Delay,
 					}
 					heap.Push(&pq, &Item{value: &PqItem{
 						Node:   v,
@@ -89,7 +90,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	}
 	// now we have the hop map, we can build the hops
 	hops := make([]RouteHop, 0, 10)
-	for u := src; u != dst; u = hop[u].Channel.Destination {
+	for u := src; u != dst; u = hop[u].Destination {
 		hops = append(hops, hop[u])
 	}
 	return hops, nil

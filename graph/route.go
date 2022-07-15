@@ -49,11 +49,10 @@ func (r *Route) FeePPM() uint64 {
 
 func (r *Route) Prepend(channel *Channel) {
 	firstHop := r.Hops[0]
-	firstHop.MilliSatoshi += firstHop.Channel.ComputeFee(firstHop.MilliSatoshi)
 	newFirstHop := RouteHop{
 		Channel:      channel,
 		MilliSatoshi: firstHop.MilliSatoshi,
-		Delay:        firstHop.Delay + firstHop.Channel.Delay,
+		Delay:        firstHop.Delay,
 	}
 	r.Hops = append([]RouteHop{newFirstHop}, r.Hops...)
 }
@@ -62,8 +61,9 @@ func (r *Route) recomputeFeeAndDelay() {
 	for i := len(r.Hops) - 2; i >= 0; i-- {
 		nextHop := r.Hops[i+1]
 		amountToForward := nextHop.MilliSatoshi
+		r.Hops[i].MilliSatoshi = amountToForward + nextHop.ComputeFee(amountToForward)
+
 		delay := nextHop.Delay
-		r.Hops[i].MilliSatoshi = amountToForward + nextHop.Channel.ComputeFee(amountToForward)
 		r.Hops[i].Delay = delay + nextHop.Channel.Delay
 	}
 }
@@ -82,11 +82,11 @@ func (r *Route) ToLightningRoute() []glightning.RouteHop {
 	var hops []glightning.RouteHop
 	for _, hop := range r.Hops {
 		hops = append(hops, glightning.RouteHop{
-			Id:             hop.Channel.Destination,
-			ShortChannelId: hop.Channel.ShortChannelId,
+			Id:             hop.Destination,
+			ShortChannelId: hop.ShortChannelId,
 			MilliSatoshi:   hop.MilliSatoshi,
 			Delay:          hop.Delay,
-			Direction:      hop.Channel.GetDirection(),
+			Direction:      hop.GetDirection(),
 		})
 	}
 	return hops
@@ -105,8 +105,8 @@ func (r *Route) String() string {
 		from = alias
 	}
 
-	result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d\n",
-		1, from, 0.0, 0)
+	result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d, scid: %s, delay: %d\n",
+		1, from, 0.0, 0, r.Hops[0].ShortChannelId, r.Hops[0].Delay)
 	for i := 1; i < len(r.Hops); i++ {
 		fee := r.Hops[i-1].MilliSatoshi - r.Hops[i].MilliSatoshi
 		feePPM := fee * 1000000 / r.Hops[i].MilliSatoshi
@@ -114,9 +114,10 @@ func (r *Route) String() string {
 		if alias, ok := r.Graph.Aliases[from]; ok {
 			from = alias
 		}
-		result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d\n",
+		result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d, scid: %s, delay: %d\n",
 			i+1, from,
-			float64(fee)/1000, feePPM)
+			float64(fee)/1000, feePPM,
+			r.Hops[i].ShortChannelId, r.Hops[i].Delay)
 	}
 	return result
 }
