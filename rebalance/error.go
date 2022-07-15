@@ -9,18 +9,18 @@ var (
 	TemporaryFailureError = errors.New("TEMPORARY_FAILURE")
 )
 
-type RouteTooExpensiveError struct {
+type ErrRouteTooExpensive struct {
 	FeePPM uint64
 	MaxPPM uint64
 }
 
-func NewRouteTooExpensiveError(feePPM uint64, maxPPM uint64) RouteTooExpensiveError {
-	return RouteTooExpensiveError{
+func NewRouteTooExpensiveError(feePPM uint64, maxPPM uint64) ErrRouteTooExpensive {
+	return ErrRouteTooExpensive{
 		FeePPM: feePPM,
 		MaxPPM: maxPPM,
 	}
 }
 
-func (e RouteTooExpensiveError) Error() string {
+func (e ErrRouteTooExpensive) Error() string {
 	return fmt.Sprintf("route too expensive. Cheapest route found was %d ppm, but maxppm is %d", e.FeePPM, e.MaxPPM)
 }

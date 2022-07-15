@@ -46,11 +46,11 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		delay := pqItem.value.Delay
 		hops := pqItem.value.Hops
 		priority := pqItem.priority
-		if u == src {
-			break
-		}
 		if priority > distance[u] {
 			continue
+		}
+		if u == src {
+			break
 		}
 		if hops >= maxHops {
 			continue
