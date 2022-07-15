@@ -13,9 +13,9 @@ func All(v []bool) bool {
 
 func GetDirection(from, to string) string {
 	if from < to {
-		return "1"
+		return "0"
 	}
-	return "0"
+	return "1"
 }
 
 func Min(n1, n2 uint64) uint64 {

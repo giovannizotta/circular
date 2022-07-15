@@ -59,12 +59,12 @@ func (r *Route) Prepend(channel *Channel) {
 
 func (r *Route) recomputeFeeAndDelay() {
 	for i := len(r.Hops) - 2; i >= 0; i-- {
-		nextHop := r.Hops[i+1]
-		amountToForward := nextHop.MilliSatoshi
-		r.Hops[i].MilliSatoshi = amountToForward + nextHop.ComputeFee(amountToForward)
+		hop := r.Hops[i+1]
+		amountToForward := hop.MilliSatoshi
+		r.Hops[i].MilliSatoshi = amountToForward + hop.ComputeFee(amountToForward)
 
-		delay := nextHop.Delay
-		r.Hops[i].Delay = delay + nextHop.Channel.Delay
+		delay := hop.Delay
+		r.Hops[i].Delay = delay + hop.Channel.Delay
 	}
 }
 

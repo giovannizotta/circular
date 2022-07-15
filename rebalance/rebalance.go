@@ -68,7 +68,7 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 			continue
 		}
 		if errors.As(err, &ErrRouteTooExpensive{}) {
-			log.Println(err, "increasing max hops to ", maxHops+1)
+			log.Println(err, ". Increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}

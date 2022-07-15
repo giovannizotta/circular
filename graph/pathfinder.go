@@ -47,9 +47,12 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		delay := pqItem.value.Delay
 		hops := pqItem.value.Hops
 		priority := pqItem.priority
+		//log.Println("visiting", g.Aliases[u], "with priority", priority)
 		if priority > distance[u] {
+			//log.Println(g.Aliases[u], "is too far away, there's a path of distance", distance[u])
 			continue
 		}
+		//log.Println(g.Aliases[u], "is now being visited at distance", distance[u])
 		if u == src {
 			break
 		}
@@ -62,7 +65,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			}
 			for _, scid := range edge {
 				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
-				if !channel.CanUse(amount) {
+				if !channel.CanForward(amount) {
 					continue
 				}
 				channelFee := channel.ComputeFee(amount)
@@ -74,6 +77,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 						amount + channelFee,
 						delay + channel.Delay,
 					}
+					//log.Println("adding", g.Aliases[v], "with priority", newDistance)
 					heap.Push(&pq, &Item{value: &PqItem{
 						Node:   v,
 						Amount: amount + channelFee,

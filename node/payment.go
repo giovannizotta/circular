@@ -51,9 +51,9 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	log.Printf("channel %s failed, opposite channel is %s\n", oppositeChannelId, channelId)
 	log.Printf("code: %d, failcode: %d, failcodename: %s\n", sf.Code, sf.Data.FailCode, sf.Data.FailCodeName)
 	// TODO: handle failure codes separately: right now we treat every failure as a liquidity failure, but it might not be the case
-	s.Graph.Channels[oppositeChannelId].Liquidity = sf.Data.MilliSatoshi - 1000000
-	s.Graph.Channels[channelId].Liquidity =
-		s.Graph.Channels[channelId].Satoshis*1000 - s.Graph.Channels[oppositeChannelId].Liquidity
+	s.Graph.Channels[channelId].Liquidity = sf.Data.MilliSatoshi - 1000000
+	s.Graph.Channels[oppositeChannelId].Liquidity =
+		s.Graph.Channels[oppositeChannelId].Satoshis*1000 - s.Graph.Channels[channelId].Liquidity
 }
 
 func (s *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {

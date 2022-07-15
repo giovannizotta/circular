@@ -45,7 +45,7 @@ func (c *Channel) GetDirection() uint8 {
 	return 1
 }
 
-func (c *Channel) CanUse(amount uint64) bool {
+func (c *Channel) CanForward(amount uint64) bool {
 	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
 	conditions := []bool{
 		c.Liquidity >= amount,
