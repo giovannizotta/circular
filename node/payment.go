@@ -44,11 +44,12 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 		return
 	}
 	direction := strconv.Itoa(sf.Data.ErringDirection)
-	oppositeDirection := strconv.Itoa(sf.Data.ErringDirection ^ 0x1)
 	channelId := sf.Data.ErringChannel + "/" + direction
+
+	oppositeDirection := strconv.Itoa(sf.Data.ErringDirection ^ 0x1)
 	oppositeChannelId := sf.Data.ErringChannel + "/" + oppositeDirection
-	log.Println("failed from " + s.Graph.Channels[oppositeChannelId].Source + " to " + s.Graph.Channels[oppositeChannelId].Destination)
-	log.Printf("channel %s failed, opposite channel is %s\n", oppositeChannelId, channelId)
+	log.Println("failed from " + s.Graph.Channels[channelId].Source + " to " + s.Graph.Channels[channelId].Destination)
+	log.Printf("channel %s failed, opposite channel is %s\n", channelId, oppositeChannelId)
 	log.Printf("code: %d, failcode: %d, failcodename: %s\n", sf.Code, sf.Data.FailCode, sf.Data.FailCodeName)
 	// TODO: handle failure codes separately: right now we treat every failure as a liquidity failure, but it might not be the case
 	s.Graph.Channels[channelId].Liquidity = sf.Data.MilliSatoshi - 1000000

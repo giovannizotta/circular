@@ -110,7 +110,6 @@ func (g *Graph) PrintStats() {
 		if maxHtlc >= 200000000 {
 			atLeast200kMaxHtlc++
 		}
-
 	}
 	log.Println("Graph stats:")
 	log.Println("graph has", len(g.Inbound), "nodes")
