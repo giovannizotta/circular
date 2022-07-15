@@ -23,7 +23,10 @@ func (c *Channel) ComputeFee(amount uint64) uint64 {
 	result := c.BaseFeeMillisatoshi
 	// get the ceiling of the integer division
 	numerator := (amount / 1000) * c.FeePerMillionth
-	proportionalFee := ((numerator - 1) / 1000) + 1
+	var proportionalFee uint64 = 0
+	if numerator > 0 {
+		proportionalFee = ((numerator - 1) / 1000) + 1
+	}
 	result += proportionalFee
 	return result
 }
