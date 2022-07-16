@@ -18,9 +18,8 @@ func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		return nil, err
 	}
 
-	result, err := s.lightning.WaitSendPay(paymentHash, PAYMENT_TIMEOUT)
+	result, err := s.lightning.WaitSendPay(paymentHash, SENDPAY_TIMEOUT)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	return result, nil

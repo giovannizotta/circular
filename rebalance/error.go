@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	TemporaryFailureError = errors.New("TEMPORARY_FAILURE")
+	ErrTemporaryFailure = errors.New("TEMPORARY_FAILURE")
+	ErrSendPayTimeout   = errors.New("200:Timed out while waiting")
 )
 
 type ErrRouteTooExpensive struct {

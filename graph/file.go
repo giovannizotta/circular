@@ -35,6 +35,7 @@ func LoadFromFile(filename string) *Graph {
 
 func (g *Graph) SaveToFile(dir, filename string) {
 	defer util.TimeTrack(time.Now(), "graph.SaveToFile")
+
 	//check if dir exists, otherwise create it
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.Mkdir(dir, 0755)
@@ -42,6 +43,7 @@ func (g *Graph) SaveToFile(dir, filename string) {
 			log.Println("unable to create directory:", err)
 		}
 	}
+
 	// open temporary file
 	filename = dir + "/" + filename
 	file, err := os.Create(filename + ".tmp")
@@ -50,6 +52,7 @@ func (g *Graph) SaveToFile(dir, filename string) {
 		return
 	}
 	defer file.Close()
+
 	// write json
 	err = json.NewEncoder(file).Encode(g)
 	if err != nil {

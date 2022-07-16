@@ -11,7 +11,7 @@ import (
 
 const (
 	PEER_REFRESH    = "1m"
-	PAYMENT_TIMEOUT = 60
+	SENDPAY_TIMEOUT = 120 // 2 minutes
 	CIRCULAR_DIR    = "circular"
 )
 

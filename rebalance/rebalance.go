@@ -53,33 +53,48 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 	maxHops := 3
 	var err error
 	var result string
-	for i := 1; i <= r.Attempts; {
+	var i int
+	for i = 1; i <= r.Attempts; {
 		if maxHops > MAX_HOPS {
-			return NewResult("unable to find a route with less than " + strconv.Itoa(MAX_HOPS) + "hops"), nil
+			err = errors.New("unable to find a route with less than " +
+				strconv.Itoa(MAX_HOPS) +
+				" hops: " + err.Error())
+			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
 		result, err = r.run(maxHops)
+
 		// success
 		if err == nil {
 			result += " after " + strconv.Itoa(i) + " attempts"
 			log.Println(result)
 			return NewResult(result), nil
 		}
+
 		// no route found with at most maxHops
 		if err == graph.ErrNoRoute {
 			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}
+
 		// no route found with at most maxHops cheaper than maxPPM
 		if errors.As(err, &ErrRouteTooExpensive{}) {
 			log.Println(err, ", increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}
+
+		// sendpay timeout
+		if err == ErrSendPayTimeout {
+			err = errors.New("rebalancing timed out after " +
+				strconv.Itoa(node.SENDPAY_TIMEOUT) +
+				"s. The payment is still in flight and may still succeed.")
+		}
+
 		// TODO: handle case where the peer channel has gone offline
-		if err != TemporaryFailureError {
-			return NewResult(result), nil
+		if err != ErrTemporaryFailure {
+			break
 		}
 		i++
 	}

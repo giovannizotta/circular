@@ -62,7 +62,11 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {
-		return nil, TemporaryFailureError
+		// TODO: meh, refactor
+		if err.Error() == ErrSendPayTimeout.Error() {
+			return nil, ErrSendPayTimeout
+		}
+		return nil, ErrTemporaryFailure
 	}
 
 	return route, nil
