@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestPathfindBasic(t *testing.T) {
+func TestPathfinderBasic(t *testing.T) {
 	t.Log("graph/pathfinder_test.go")
 	graph := LoadFromFile("testdata/graph.json")
 	if graph == nil {

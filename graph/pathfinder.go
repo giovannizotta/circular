@@ -3,8 +3,14 @@ package graph
 import (
 	"circular/util"
 	"container/heap"
+	"errors"
 	"log"
 	"time"
+)
+
+var (
+	ErrNoSuchNode = errors.New("no such node")
+	ErrNoRoute    = errors.New("no route")
 )
 
 func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool, maxHops int) (*Route, error) {
@@ -21,6 +27,14 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
 	defer util.TimeTrack(time.Now(), "graph.dijkstra")
+	if _, ok := g.Inbound[dst]; !ok {
+		log.Println("dst:", ErrNoSuchNode)
+		return nil, ErrNoSuchNode
+	}
+	if _, ok := g.Inbound[src]; !ok {
+		log.Println("src:", ErrNoSuchNode)
+		return nil, ErrNoSuchNode
+	}
 	log.Println("looking for a route from", src, "to", dst)
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
@@ -61,7 +75,12 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 				continue
 			}
 			for _, scid := range edge {
-				channel := g.Channels[scid+"/"+util.GetDirection(v, u)]
+				channelId := scid + "/" + util.GetDirection(v, u)
+				if _, ok := g.Channels[channelId]; !ok {
+					log.Println("channel not found:", channelId)
+					continue
+				}
+				channel := g.Channels[channelId]
 				if !channel.CanForward(amount) {
 					continue
 				}
