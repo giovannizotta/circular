@@ -47,6 +47,7 @@ The following is a list of features that will be added in the future:
 * Allow the user to omit the `outscid` or `outnode` parameter and let the plugin find the best alternative
 * Liquidity aging policy: right now if there is a failure on a channel, the liquidity belief doesn't move until that channel is used again. This information might change over time, and we want to keep that into account.
 * Concurrent rebalancing attempts
+* Store information about successes and failures in the database for statistics
 * More granularity in error management
 * Better logging
 * More testing
