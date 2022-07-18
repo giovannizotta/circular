@@ -92,6 +92,7 @@ func (r *Rebalance) Run() (*Result, error) {
 			err = errors.New("rebalancing timed out after " +
 				strconv.Itoa(node.SENDPAY_TIMEOUT) +
 				"s. The payment is still in flight and may still succeed.")
+			break
 		}
 
 		// TODO: handle case where the peer channel has gone offline
@@ -100,7 +101,7 @@ func (r *Rebalance) Run() (*Result, error) {
 		}
 		i++
 	}
-	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts) + " attempts, last error: " + err.Error()), nil
+	return NewResult("rebalance failed after " + strconv.Itoa(i) + " attempts, last error: " + err.Error()), nil
 }
 
 func (r *Rebalance) runAttempt(maxHops int, outgoingChannel *graph.Channel, incomingChannel *graph.Channel) (string, error) {
