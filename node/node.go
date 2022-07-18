@@ -2,6 +2,7 @@ package node
 
 import (
 	"circular/graph"
+	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
@@ -68,7 +69,29 @@ func (s *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel
 	return best
 }
 
+func (s *Node) GetPeerChannelFromNodeID(scid string) (*glightning.PeerChannel, error) {
+	for _, peer := range s.Peers {
+		for _, channel := range peer.Channels {
+			if channel.ShortChannelId == scid {
+				return channel, nil
+			}
+		}
+	}
+	return nil, util.ErrNoPeerChannel
+}
+
 func (s *Node) HasPeer(id string) bool {
 	_, ok := s.Peers[id]
 	return ok
+}
+
+func (s *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
+	for _, peer := range s.Peers {
+		for _, channel := range peer.Channels {
+			if channel.ShortChannelId == scid {
+				return peer, nil
+			}
+		}
+	}
+	return nil, util.ErrNoPeerChannel
 }

@@ -22,6 +22,7 @@ func TestPathfinderBasic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.LessOrEqual(t, len(hops), maxHops)
 	for i := 0; i < len(hops)-1; i++ {
 		assert.Equal(t, hops[i].Destination, hops[i+1].Source)
 		assert.GreaterOrEqual(t, hops[i].Liquidity, hops[i].MilliSatoshi)

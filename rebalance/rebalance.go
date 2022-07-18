@@ -3,9 +3,9 @@ package rebalance
 import (
 	"circular/graph"
 	"circular/node"
+	"circular/util"
 	"errors"
 	"fmt"
-	"github.com/elementsproject/glightning/jrpc2"
 	"log"
 	"strconv"
 )
@@ -19,37 +19,39 @@ const (
 )
 
 type Rebalance struct {
-	Out      string     `json:"out"`
-	In       string     `json:"in"`
-	Amount   uint64     `json:"amount,omitempty"`
-	MaxPPM   uint64     `json:"maxppm,omitempty"`
-	Attempts int        `json:"attempts,omitempty"`
-	Node     *node.Node `json:"-"`
+	OutChannel *graph.Channel
+	InChannel  *graph.Channel
+	Amount     uint64
+	MaxPPM     uint64
+	Attempts   int
+	Node       *node.Node
 }
 
-func (r *Rebalance) Name() string {
-	return "circular"
+func NewRebalance(outChannel, inChannel *graph.Channel, amount, maxppm uint64, attempts int) *Rebalance {
+	return &Rebalance{
+		OutChannel: outChannel,
+		InChannel:  inChannel,
+		Amount:     amount,
+		MaxPPM:     maxppm,
+		Attempts:   attempts,
+		Node:       node.GetNode(),
+	}
 }
 
-func (r *Rebalance) New() interface{} {
-	return &Rebalance{}
-}
-
-func (r *Rebalance) Call() (jrpc2.Result, error) {
-	r.Node = node.GetNode()
-	//convert to msatoshi
-	r.Amount *= 1000
-
-	log.Println("circular rebalance called")
-	log.Println("self: ", r.Node.Id)
-	log.Println("in:", r.In)
-	log.Println("out:", r.Out)
-	log.Println("amount:", r.Amount, "maxppm:", r.MaxPPM)
-	log.Println("attempts:", r.Attempts)
-	if err := r.validateParameters(); err != nil {
-		return nil, err
+func (r *Rebalance) Setup() error {
+	err := r.setDefaultParameters()
+	if err != nil {
+		return err
 	}
 
+	err = r.validateLiquidityParameters(r.OutChannel, r.InChannel)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Rebalance) Run() (*Result, error) {
 	maxHops := 3
 	var err error
 	var result string
@@ -62,7 +64,7 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
-		result, err = r.run(maxHops)
+		result, err = r.runAttempt(maxHops, r.OutChannel, r.InChannel)
 
 		// success
 		if err == nil {
@@ -72,39 +74,37 @@ func (r *Rebalance) Call() (jrpc2.Result, error) {
 		}
 
 		// no route found with at most maxHops
-		if err == graph.ErrNoRoute {
+		if err == util.ErrNoRoute {
 			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}
 
 		// no route found with at most maxHops cheaper than maxPPM
-		if errors.As(err, &ErrRouteTooExpensive{}) {
+		if errors.As(err, &util.ErrRouteTooExpensive{}) {
 			log.Println(err, ", increasing max hops to ", maxHops+1)
 			maxHops += 1
 			continue
 		}
 
 		// sendpay timeout
-		if err == ErrSendPayTimeout {
+		if err == util.ErrSendPayTimeout {
 			err = errors.New("rebalancing timed out after " +
 				strconv.Itoa(node.SENDPAY_TIMEOUT) +
 				"s. The payment is still in flight and may still succeed.")
 		}
 
 		// TODO: handle case where the peer channel has gone offline
-		if err != ErrTemporaryFailure {
+		if err != util.ErrTemporaryFailure {
 			break
 		}
 		i++
 	}
-
 	return NewResult("rebalance failed after " + strconv.Itoa(r.Attempts) + " attempts, last error: " + err.Error()), nil
 }
 
-func (r *Rebalance) run(maxHops int) (string, error) {
-
-	route, err := r.tryRoute(maxHops)
+func (r *Rebalance) runAttempt(maxHops int, outgoingChannel *graph.Channel, incomingChannel *graph.Channel) (string, error) {
+	route, err := r.tryRoute(maxHops, outgoingChannel, incomingChannel)
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +113,7 @@ func (r *Rebalance) run(maxHops int) (string, error) {
 			"successfully rebalanced %d sats "+
 			"from %s to %s at %d ppm. Total fees paid: %.3f sats",
 			r.Amount/1000,
-			r.Node.Graph.Aliases[r.Out], r.Node.Graph.Aliases[r.In],
+			r.Node.Graph.Aliases[outgoingChannel.Destination], r.Node.Graph.Aliases[incomingChannel.Source],
 			route.FeePPM(), float64(route.Fee())/1000),
 		nil
 }

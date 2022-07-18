@@ -1,40 +1,21 @@
 package rebalance
 
 import (
+	"circular/graph"
+	"circular/node"
 	"errors"
-	"github.com/elementsproject/glightning/glightning"
 	"log"
 )
 
-func (r *Rebalance) validatePeerParameters() error {
-	//validate that the nodes are not self
-	if r.In == r.Node.Id || r.Out == r.Node.Id {
-		return errors.New("one of the nodes is self")
+func (r *Rebalance) validateLiquidityParameters(out *graph.Channel, in *graph.Channel) error {
+	inChannel, err := r.Node.GetPeerChannelFromNodeID(in.ShortChannelId)
+	if err != nil {
+		return err
 	}
-	//validate that the nodes are not the same
-	if r.In == r.Out {
-		return errors.New("incoming and outgoing nodes are the same")
+	outChannel, err := r.Node.GetPeerChannelFromNodeID(out.ShortChannelId)
+	if err != nil {
+		return err
 	}
-	if len(r.Node.Peers) == 0 {
-		return errors.New("no peers yet")
-	}
-	//validate that In and Out are peers
-	if !r.Node.HasPeer(r.In) {
-		return errors.New("incoming node is not a peer")
-	}
-	if !r.Node.HasPeer(r.Out) {
-		return errors.New("outgoing node is not a peer")
-	}
-	return nil
-}
-
-func (r *Rebalance) validateLiquidityParameters() error {
-	inChannel := r.Node.GetBestPeerChannel(r.In, func(channel *glightning.PeerChannel) uint64 {
-		return channel.ReceivableMilliSatoshi
-	})
-	outChannel := r.Node.GetBestPeerChannel(r.Out, func(channel *glightning.PeerChannel) uint64 {
-		return channel.SpendableMilliSatoshi
-	})
 	//validate that the channels are in normal state
 	if inChannel.State != NORMAL {
 		return errors.New("incoming channel is not in normal state")
@@ -52,10 +33,10 @@ func (r *Rebalance) validateLiquidityParameters() error {
 	return nil
 }
 
-func (r *Rebalance) validateParameters() error {
-	if r.In == "" || r.Out == "" {
-		return errors.New("missing required parameter: in and out nodes have to be provided")
-	}
+func (r *Rebalance) setDefaultParameters() error {
+	r.Node = node.GetNode()
+	//convert to msatoshi
+	r.Amount *= 1000
 	if r.Amount == 0 {
 		r.Amount = DEFAULT_AMOUNT
 		log.Println("amount not provided, using default value", r.Amount)
@@ -68,15 +49,5 @@ func (r *Rebalance) validateParameters() error {
 		r.Attempts = DEFAULT_ATTEMPTS
 		log.Println("attempts not provided, using default value", r.Attempts)
 	}
-	err := r.validatePeerParameters()
-	if err != nil {
-		return err
-	}
-
-	err = r.validateLiquidityParameters()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

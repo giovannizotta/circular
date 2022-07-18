@@ -50,6 +50,7 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	log.Println("failed from " + s.Graph.Channels[channelId].Source + " to " + s.Graph.Channels[channelId].Destination)
 	log.Printf("channel %s failed, opposite channel is %s\n", channelId, oppositeChannelId)
 	log.Printf("code: %d, failcode: %d, failcodename: %s\n", sf.Code, sf.Data.FailCode, sf.Data.FailCodeName)
+
 	if _, ok := s.Graph.Channels[channelId]; !ok {
 		log.Println("channel not found:", channelId)
 		return
