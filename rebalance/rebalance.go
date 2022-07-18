@@ -66,7 +66,7 @@ func (r *Rebalance) Run() (*Result, error) {
 			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
-		result, err = r.runAttempt(maxHops, r.OutChannel, r.InChannel)
+		result, err = r.runAttempt(maxHops)
 
 		// success
 		if err == nil {
@@ -97,7 +97,7 @@ func (r *Rebalance) Run() (*Result, error) {
 			break
 		}
 
-		// TODO: handle case where the peer channel has gone offline
+		// TODO: handle case where the peer channel has gone offline (First peer not ready)
 		if err != util.ErrTemporaryFailure {
 			break
 		}
@@ -106,8 +106,8 @@ func (r *Rebalance) Run() (*Result, error) {
 	return NewResult("rebalance failed after " + strconv.Itoa(i) + " attempts, last error: " + err.Error()), nil
 }
 
-func (r *Rebalance) runAttempt(maxHops int, outgoingChannel *graph.Channel, incomingChannel *graph.Channel) (string, error) {
-	route, err := r.tryRoute(maxHops, outgoingChannel, incomingChannel)
+func (r *Rebalance) runAttempt(maxHops int) (string, error) {
+	route, err := r.tryRoute(maxHops)
 	if err != nil {
 		return "", err
 	}
@@ -116,7 +116,7 @@ func (r *Rebalance) runAttempt(maxHops int, outgoingChannel *graph.Channel, inco
 			"successfully rebalanced %d sats "+
 			"from %s to %s at %d ppm. Total fees paid: %.3f sats",
 			r.Amount/1000,
-			r.Node.Graph.Aliases[outgoingChannel.Destination], r.Node.Graph.Aliases[incomingChannel.Source],
+			r.Node.Graph.Aliases[r.OutChannel.Destination], r.Node.Graph.Aliases[r.InChannel.Source],
 			route.FeePPM(), float64(route.Fee())/1000),
 		nil
 }

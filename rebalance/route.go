@@ -7,21 +7,21 @@ import (
 	"time"
 )
 
-func (r *Rebalance) getRoute(maxHops int, outgoingChannel *graph.Channel, incomingChannel *graph.Channel) (*graph.Route, error) {
+func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	defer util.TimeTrack(time.Now(), "rebalance.getRoute")
 	exclude := make(map[string]bool)
 	exclude[r.Node.Id] = true
 
-	src := outgoingChannel.Destination
-	dst := incomingChannel.Source
+	src := r.OutChannel.Destination
+	dst := r.InChannel.Source
 
 	route, err := r.Node.Graph.GetRoute(src, dst, r.Amount, exclude, maxHops)
 	if err != nil {
 		return nil, err
 	}
 
-	route.Prepend(outgoingChannel)
-	route.Append(incomingChannel)
+	route.Prepend(r.OutChannel)
+	route.Append(r.InChannel)
 
 	if route.FeePPM() > r.MaxPPM {
 		log.Println("best route found was: ", route)
@@ -31,13 +31,13 @@ func (r *Rebalance) getRoute(maxHops int, outgoingChannel *graph.Channel, incomi
 	return route, nil
 }
 
-func (r *Rebalance) tryRoute(maxHops int, outgoingChannel *graph.Channel, incomingChannel *graph.Channel) (*graph.Route, error) {
+func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 	paymentSecret, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {
 		return nil, err
 	}
 
-	route, err := r.getRoute(maxHops, outgoingChannel, incomingChannel)
+	route, err := r.getRoute(maxHops)
 	if err != nil {
 		return nil, err
 	}
