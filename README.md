@@ -15,7 +15,7 @@ go build -o circular cmd/circular/*.go
 ```
 
 ## Running
-This plugin is dynamic, meaning that you can start and stop it via the CLI. For general plugin installation instructions see [How to install a plugin](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+This plugin is dynamic, meaning that you can start and stop it via the CLI. For general plugin installation instructions see [How to install a plugin](https://github.com/lightningd/plugins/blob/master/README.md#Installation).
 
 The executable that you have just built is called `circular`.
 
@@ -32,18 +32,23 @@ via nodeID:
 lightning-cli circular-node -k outnode=123abc innode=345def amount=200000 maxppm=10 attempts=1
 ```
 
-The required parameters are:
+Required parameters:
 * `outnode` or `outscid`: the node/scid that you want to use to send the payment.
 * `innode` or `inscid`: the node/scid where you want to receive the payment.
 
-Optional parameters are:
-`amount`(sats, default=200000) is the amount that you want to rebalance and `maxppm`(default=10) is the maximum ppm that you are willing to pay. `attempts`(default=1) is the number of payment attempts that will be made once a path is found.
+Optional parameters:
+* `amount`(sats, default=200000) is the amount that you want to rebalance
+* `maxppm`(default=10) is the maximum ppm that you are willing to pay
+* `attempts`(default=1) is the number of payment attempts that will be made once a path is found
+* `maxhops`(default=8) is the maximum number of hops that a path is allowed to have
 
 ## Roadmap
 The following is a list of features that will be added in the future:
 * Allow the user to omit the `outscid` or `outnode` parameter and let the plugin find the best alternative
 * Liquidity aging policy: right now if there is a failure on a channel, the liquidity belief doesn't move until that channel is used again. This information might change over time, and we want to keep that into account.
 * Concurrent rebalancing attempts
+* More granularity in error management
+* Better logging
 * More testing
 
 ## Contributing
