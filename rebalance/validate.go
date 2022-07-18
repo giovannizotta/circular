@@ -2,7 +2,6 @@ package rebalance
 
 import (
 	"circular/graph"
-	"circular/node"
 	"errors"
 	"log"
 )
@@ -34,7 +33,6 @@ func (r *Rebalance) validateLiquidityParameters(out *graph.Channel, in *graph.Ch
 }
 
 func (r *Rebalance) setDefaultParameters() error {
-	r.Node = node.GetNode()
 	//convert to msatoshi
 	r.Amount *= 1000
 	if r.Amount == 0 {

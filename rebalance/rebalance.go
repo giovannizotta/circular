@@ -13,7 +13,7 @@ import (
 const (
 	NORMAL           = "CHANNELD_NORMAL"
 	DEFAULT_AMOUNT   = 200000000
-	DEFAULT_PPM      = 100
+	DEFAULT_PPM      = 10
 	DEFAULT_ATTEMPTS = 1
 	MAX_HOPS         = 15
 )
