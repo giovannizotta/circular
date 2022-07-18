@@ -70,7 +70,7 @@ func (r *RebalanceByNode) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
-	rebalance := NewRebalance(outgoingChannel, incomingChannel, r.Amount, r.MaxPPM, r.Attempts)
+	rebalance := NewRebalance(outgoingChannel, incomingChannel, r.Amount, r.MaxPPM, r.Attempts, r.MaxHops)
 
 	err = rebalance.Setup()
 	if err != nil {

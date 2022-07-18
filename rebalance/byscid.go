@@ -45,7 +45,7 @@ func (r *RebalanceByScid) Call() (jrpc2.Result, error) {
 	outgoingChannel := r.Node.Graph.Channels[outgoingChannelId]
 	incomingChannel := r.Node.Graph.Channels[incomingChannelId]
 
-	rebalance := NewRebalance(outgoingChannel, incomingChannel, r.Amount, r.MaxPPM, r.Attempts)
+	rebalance := NewRebalance(outgoingChannel, incomingChannel, r.Amount, r.MaxPPM, r.Attempts, r.MaxHops)
 
 	err = rebalance.Setup()
 	if err != nil {

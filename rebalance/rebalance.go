@@ -28,13 +28,14 @@ type Rebalance struct {
 	Node       *node.Node
 }
 
-func NewRebalance(outChannel, inChannel *graph.Channel, amount, maxppm uint64, attempts int) *Rebalance {
+func NewRebalance(outChannel, inChannel *graph.Channel, amount, maxppm uint64, attempts, maxHops int) *Rebalance {
 	return &Rebalance{
 		OutChannel: outChannel,
 		InChannel:  inChannel,
 		Amount:     amount,
 		MaxPPM:     maxppm,
 		Attempts:   attempts,
+		MaxHops:    maxHops,
 		Node:       node.GetNode(),
 	}
 }
