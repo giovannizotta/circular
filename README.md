@@ -1,9 +1,9 @@
 # circular
 
-Circular is a Core Lightning plugin that helps routing nodes rebalance their channels.
+`circular` is a Core Lightning plugin that helps lightning nodes rebalance their channels.
 
-It optimizes on fees, and it's designed to be used by routing nodes who do not need reliability in their payments and just want to rebalance their channels at the cheapest possible rate.
-It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments.
+It optimizes on **fees**, and it's designed to be used by routing nodes who do not need reliability in their payments and just want to rebalance their channels at the cheapest possible rate.
+It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments. Initially it doesn't know anything about the graph, but it will learn about it as it fails payments.
 
 ## Building
 You need Go 1.13 or higher to build this plugin.
@@ -37,7 +37,7 @@ The required parameters are:
 * `innode` or `inscid`: the node/scid where you want to receive the payment.
 
 Optional parameters are:
-`amount`(sats, default=200000) is the amount that you want to rebalance and `maxppm`(default=10) is the maximum ppm that you are willing to pay. `attempts`(default=1) is the number of attempts that will be made to find a path.
+`amount`(sats, default=200000) is the amount that you want to rebalance and `maxppm`(default=10) is the maximum ppm that you are willing to pay. `attempts`(default=1) is the number of payment attempts that will be made once a path is found.
 
 ## Roadmap
 The following is a list of features that will be added in the future:

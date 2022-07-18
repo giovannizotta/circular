@@ -25,7 +25,7 @@ var (
 	ErrSelfNode            = errors.New("one of the nodes is self")
 	ErrNoPeers             = errors.New("no peers yet")
 	ErrNoRequiredParameter = errors.New("missing required parameter")
-	ErrNoPeerChannel       = errors.New("no peer channel")
+	ErrNoPeerChannel       = errors.New("not a peer or peer channel")
 	ErrTemporaryFailure    = errors.New("TEMPORARY_FAILURE")
 	ErrSendPayTimeout      = errors.New("200:Timed out while waiting")
 	ErrNoSuchNode          = errors.New("no such node")
