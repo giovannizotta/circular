@@ -52,11 +52,13 @@ func (r *Rebalance) Setup() error {
 }
 
 func (r *Rebalance) Run() (*Result, error) {
-	maxHops := 3
-	var err error
-	var result string
-	var i int
-	for i = 1; i <= r.Attempts; {
+	var (
+		maxHops = 3
+		i       = 1
+		err     error
+		result  string
+	)
+	for i <= r.Attempts {
 		if maxHops > MAX_HOPS {
 			err = errors.New("unable to find a route with less than " +
 				strconv.Itoa(MAX_HOPS) +
