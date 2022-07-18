@@ -13,9 +13,9 @@ import (
 const (
 	NORMAL           = "CHANNELD_NORMAL"
 	DEFAULT_AMOUNT   = 200000000
-	DEFAULT_PPM      = 10
+	DEFAULT_MAXPPM   = 10
 	DEFAULT_ATTEMPTS = 1
-	MAX_HOPS         = 15
+	DEFAULT_MAXHOPS  = 8
 )
 
 type Rebalance struct {
@@ -24,6 +24,7 @@ type Rebalance struct {
 	Amount     uint64
 	MaxPPM     uint64
 	Attempts   int
+	MaxHops    int
 	Node       *node.Node
 }
 
@@ -59,13 +60,14 @@ func (r *Rebalance) Run() (*Result, error) {
 		result  string
 	)
 	for i <= r.Attempts {
-		if maxHops > MAX_HOPS {
+		if maxHops > r.MaxHops {
 			err = errors.New("unable to find a route with less than " +
-				strconv.Itoa(MAX_HOPS) +
+				strconv.Itoa(r.MaxHops) +
 				" hops: " + err.Error())
 			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
+
 		result, err = r.runAttempt(maxHops)
 
 		// success

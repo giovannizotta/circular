@@ -40,12 +40,16 @@ func (r *Rebalance) setDefaultParameters() error {
 		log.Println("amount not provided, using default value", r.Amount)
 	}
 	if r.MaxPPM == 0 {
-		r.MaxPPM = DEFAULT_PPM
+		r.MaxPPM = DEFAULT_MAXPPM
 		log.Println("maxPPM not provided, using default value", r.MaxPPM)
 	}
 	if r.Attempts <= 0 {
 		r.Attempts = DEFAULT_ATTEMPTS
 		log.Println("attempts not provided, using default value", r.Attempts)
+	}
+	if r.MaxHops <= 0 {
+		r.MaxHops = DEFAULT_MAXHOPS
+		log.Println("maxHops not provided, using default value", r.MaxHops)
 	}
 	return nil
 }
