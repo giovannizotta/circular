@@ -53,4 +53,6 @@ The following is a list of features that will be added in the future:
 * More testing
 
 ## Contributing
-If you have any problems feel free to open an issue. Pull requests are welcome as well.
+If you have any problems feel free to open an issue or join our [Telegram group](https://t.me/+u_R8kAfpSJBjMjI0). Pull requests are welcome as well.
+
+Special thanks to devzorLN🐸 for helping me test the plugin.
