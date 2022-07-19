@@ -1,4 +1,4 @@
-# circular
+# circular [![Tests](https://github.com/giovannizotta/circular/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/giovannizotta/circular/actions/workflows/tests.yml)
 
 `circular` is a Core Lightning plugin that helps lightning nodes rebalance their channels.
 
