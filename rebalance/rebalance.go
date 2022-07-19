@@ -58,24 +58,22 @@ func (r *Rebalance) Run() (*Result, error) {
 		maxHops = 3
 		i       = 1
 		err     error
-		result  string
 	)
 	for i <= r.Attempts {
 		if maxHops > r.MaxHops {
 			err = errors.New("unable to find a route with less than " +
-				strconv.Itoa(r.MaxHops) +
-				" hops: " + err.Error())
+				strconv.Itoa(r.MaxHops) + " hops")
 			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
 
-		result, err = r.runAttempt(maxHops)
+		result, err := r.runAttempt(maxHops)
 
 		// success
 		if err == nil {
-			result += " after " + strconv.Itoa(i) + " attempts"
+			result.Attempts = uint64(i)
 			log.Println(result)
-			return NewResult(result), nil
+			return result, nil
 		}
 
 		// no route found with at most maxHops
@@ -106,20 +104,42 @@ func (r *Rebalance) Run() (*Result, error) {
 		}
 		i++
 	}
-	return NewResult("rebalance failed after " + strconv.Itoa(i) + " attempts, last error: " + err.Error()), nil
+
+	failure := NewResult("failure", r.Amount/1000, r.OutChannel.Destination, r.InChannel.Source, 0, 0, 0)
+	failure.Attempts = uint64(i)
+	failure.Message = "rebalance failed after " + strconv.Itoa(int(failure.Attempts)) + " attempts. "
+	if err != nil {
+		failure.Message += "Last error: " + err.Error()
+	}
+	return failure, nil
 }
 
-func (r *Rebalance) runAttempt(maxHops int) (string, error) {
+func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 	route, err := r.tryRoute(maxHops)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return fmt.Sprintf(""+
-			"successfully rebalanced %d sats "+
-			"from %s to %s at %d ppm. Total fees paid: %.3f sats",
-			r.Amount/1000,
-			r.Node.Graph.Aliases[r.OutChannel.Destination], r.Node.Graph.Aliases[r.InChannel.Source],
-			route.FeePPM(), float64(route.Fee())/1000),
-		nil
+	// get aliases, if any
+	var srcAlias, dstAlias string
+	if _, ok := r.Node.Graph.Aliases[r.OutChannel.Destination]; ok {
+		srcAlias = r.Node.Graph.Aliases[r.OutChannel.Destination]
+	} else {
+		srcAlias = r.OutChannel.Destination
+	}
+	if _, ok := r.Node.Graph.Aliases[r.InChannel.Source]; ok {
+		dstAlias = r.Node.Graph.Aliases[r.InChannel.Source]
+	} else {
+		dstAlias = r.InChannel.Source
+	}
+
+	result := NewResult("success", r.Amount/1000,
+		r.OutChannel.Destination, r.InChannel.Source,
+		route.Fee(), route.FeePPM(), uint64(len(route.Hops)))
+
+	result.Message = fmt.Sprintf("successfully rebalanced %d sats from %s to %s at %d ppm. Total fees paid: %.3f sats",
+		result.Amount, srcAlias, dstAlias,
+		result.PPM, float64(result.Fee)/1000)
+
+	return result, nil
 }
