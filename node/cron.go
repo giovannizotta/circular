@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	STATS_REFRESH_INTERVAL = "10m"
+)
+
 func (s *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
@@ -15,6 +19,9 @@ func (s *Node) setupCronJobs(options map[string]glightning.Option) {
 	})
 	addCronJob(c, options["peer_refresh"].GetValue().(string), func() {
 		s.refreshPeers()
+	})
+	addCronJob(c, STATS_REFRESH_INTERVAL, func() {
+		s.PrintStats()
 	})
 	c.Start()
 }

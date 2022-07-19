@@ -2,7 +2,6 @@ package node
 
 import (
 	"circular/graph"
-	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
@@ -11,9 +10,9 @@ import (
 )
 
 const (
-	PEER_REFRESH    = "1m"
 	SENDPAY_TIMEOUT = 120 // 2 minutes
 	CIRCULAR_DIR    = "circular"
+	PEER_REFRESH    = "1m"
 )
 
 var (
@@ -26,7 +25,7 @@ type Node struct {
 	Id        string
 	Peers     map[string]*glightning.Peer
 	Graph     *graph.Graph
-	DB        *PreimageStore
+	DB        *Store
 }
 
 func GetNode() *Node {
@@ -58,40 +57,20 @@ func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 	s.setupCronJobs(options)
 }
 
-func (s *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
-	channels := s.Peers[id].Channels
-	best := channels[0]
-	for _, channel := range channels {
-		if metric(channel) > metric(best) {
-			best = channel
-		}
-	}
-	return best
-}
+func (s *Node) PrintStats() {
+	log.Println("Node stats:")
+	log.Println("  Peers:", len(s.Peers))
 
-func (s *Node) GetPeerChannelFromNodeID(scid string) (*glightning.PeerChannel, error) {
-	for _, peer := range s.Peers {
-		for _, channel := range peer.Channels {
-			if channel.ShortChannelId == scid {
-				return channel, nil
-			}
-		}
+	s.Graph.PrintStats()
+	
+	successes, err := s.DB.ListSuccesses()
+	if err != nil {
+		log.Println(err)
 	}
-	return nil, util.ErrNoPeerChannel
-}
-
-func (s *Node) HasPeer(id string) bool {
-	_, ok := s.Peers[id]
-	return ok
-}
-
-func (s *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
-	for _, peer := range s.Peers {
-		for _, channel := range peer.Channels {
-			if channel.ShortChannelId == scid {
-				return peer, nil
-			}
-		}
+	log.Println("successes:", len(successes))
+	failures, err := s.DB.ListFailures()
+	if err != nil {
+		log.Println(err)
 	}
-	return nil, util.ErrNoPeerChannel
+	log.Println("failures:", len(failures))
 }

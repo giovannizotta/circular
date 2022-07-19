@@ -72,7 +72,6 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 		}
 		g.Channels[channelId] = channel
 	}
-	g.PrintStats()
 }
 
 func (g *Graph) getLiquidityAfterAging(channelId string, perfectBalance uint64) uint64 {

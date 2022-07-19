@@ -3,11 +3,17 @@ package node
 import (
 	"circular/graph"
 	"circular/util"
+	"encoding/json"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"strconv"
 	"time"
+)
+
+const (
+	FAILURE_PREFIX = "f_"
+	SUCCESS_PREFIX = "s_"
 )
 
 func (s *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
@@ -42,6 +48,16 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	if err := s.deleteIfOurs(sf.Data.PaymentHash); err != nil {
 		return
 	}
+	// save to db
+	bytes, err := json.Marshal(sf)
+	if err != nil {
+		log.Println(err)
+	}
+	err = s.DB.Set(FAILURE_PREFIX+sf.Data.PaymentHash, bytes)
+	if err != nil {
+		log.Println(err)
+	}
+
 	direction := strconv.Itoa(sf.Data.ErringDirection)
 	channelId := sf.Data.ErringChannel + "/" + direction
 
@@ -67,4 +83,13 @@ func (s *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 
 func (s *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {
 	s.deleteIfOurs(ss.PaymentHash)
+	// save to db
+	bytes, err := json.Marshal(ss)
+	if err != nil {
+		log.Println(err)
+	}
+	err = s.DB.Set(SUCCESS_PREFIX+ss.PaymentHash, bytes)
+	if err != nil {
+		log.Println(err)
+	}
 }
