@@ -21,9 +21,9 @@ func NewDB(path string) *PreimageStore {
 	}
 }
 
-func (d *PreimageStore) Set(key, value string) error {
+func (d *PreimageStore) Set(key string, value []byte) error {
 	err := d.db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(key), []byte(value))
+		return txn.Set([]byte(key), value)
 	})
 	if err != nil {
 		return err
@@ -31,8 +31,8 @@ func (d *PreimageStore) Set(key, value string) error {
 	return nil
 }
 
-func (d *PreimageStore) Get(key string) (string, error) {
-	var value string
+func (d *PreimageStore) Get(key string) ([]byte, error) {
+	var value []byte
 	err := d.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
@@ -42,11 +42,11 @@ func (d *PreimageStore) Get(key string) (string, error) {
 		if err != nil {
 			return err
 		}
-		value = string(result)
+		value = result
 		return nil
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return value, nil
 }

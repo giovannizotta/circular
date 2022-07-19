@@ -25,7 +25,7 @@ func NewPreimageHashPair() PreimageHashPair {
 
 func (s *Node) GeneratePreimageHashPair() (string, error) {
 	pair := NewPreimageHashPair()
-	err := s.DB.Set(pair.Hash, pair.Preimage)
+	err := s.DB.Set(pair.Hash, []byte(pair.Preimage))
 	if err != nil {
 		return "", err
 	}

@@ -18,6 +18,6 @@ func OnHtlcAccepted(event *glightning.HtlcAcceptedEvent) (*glightning.HtlcAccept
 	if err != nil {
 		return event.Continue(), nil
 	}
-	log.Println("resolving HTLC with preimage:", preimage)
-	return event.Resolve(preimage), nil
+	log.Println("resolving HTLC with preimage:", string(preimage))
+	return event.Resolve(string(preimage)), nil
 }
