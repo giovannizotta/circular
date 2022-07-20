@@ -55,14 +55,14 @@ func (r *Rebalance) Setup() error {
 
 func (r *Rebalance) Run() (*Result, error) {
 	var (
-		maxHops = 3
-		i       = 1
-		err     error
+		maxHops   = 3
+		i         = 1
+		lastError = ""
 	)
 	for i <= r.Attempts {
 		if maxHops > r.MaxHops {
-			err = errors.New("unable to find a route with less than " +
-				strconv.Itoa(r.MaxHops) + " hops")
+			lastError = " Unable to find a route with less than " +
+				strconv.Itoa(r.MaxHops) + " hops. " + lastError
 			break
 		}
 		log.Println("===================== ATTEMPT", i, "=====================")
@@ -79,6 +79,7 @@ func (r *Rebalance) Run() (*Result, error) {
 		// no route found with at most maxHops
 		if err == util.ErrNoRoute {
 			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
+			lastError = err.Error()
 			maxHops += 1
 			continue
 		}
@@ -86,31 +87,32 @@ func (r *Rebalance) Run() (*Result, error) {
 		// no route found with at most maxHops cheaper than maxPPM
 		if errors.As(err, &util.ErrRouteTooExpensive{}) {
 			log.Println(err, ", increasing max hops to ", maxHops+1)
+			lastError = err.Error()
 			maxHops += 1
 			continue
 		}
 
 		// sendpay timeout
 		if err == util.ErrSendPayTimeout {
-			err = errors.New("rebalancing timed out after " +
+			lastError = "rebalancing timed out after " +
 				strconv.Itoa(node.SENDPAY_TIMEOUT) +
-				"s. The payment is still in flight and may still succeed.")
+				"s. The payment is still in flight and may still succeed."
 			break
 		}
 
 		// TODO: handle case where the peer channel has gone offline (First peer not ready)
 		if err != util.ErrTemporaryFailure {
+			lastError = err.Error()
 			break
 		}
 		i++
 	}
 
-	failure := NewResult("failure", r.Amount/1000, r.OutChannel.Destination, r.InChannel.Source, 0, 0, 0)
+	failure := NewResult("failure", r.Amount/1000, r.OutChannel.Destination, r.InChannel.Source)
 	failure.Attempts = uint64(i)
-	failure.Message = "rebalance failed after " + strconv.Itoa(int(failure.Attempts)) + " attempts. "
-	if err != nil {
-		failure.Message += "Last error: " + err.Error()
-	}
+	failure.Message = "rebalance failed after " + strconv.Itoa(int(failure.Attempts)) + " attempts."
+	failure.Message += lastError
+
 	return failure, nil
 }
 
@@ -134,8 +136,11 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 	}
 
 	result := NewResult("success", r.Amount/1000,
-		r.OutChannel.Destination, r.InChannel.Source,
-		route.Fee(), route.FeePPM(), uint64(len(route.Hops)))
+		r.OutChannel.Destination, r.InChannel.Source)
+
+	result.Fee = route.Fee()
+	result.PPM = route.FeePPM()
+	result.Hops = len(route.Hops)
 
 	result.Message = fmt.Sprintf("successfully rebalanced %d sats from %s to %s at %d ppm. Total fees paid: %.3f sats",
 		result.Amount, srcAlias, dstAlias,
