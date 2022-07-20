@@ -12,16 +12,16 @@ const (
 	STATS_REFRESH_INTERVAL = "10m"
 )
 
-func (s *Node) setupCronJobs(options map[string]glightning.Option) {
+func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
-		s.refreshGraph()
+		n.refreshGraph()
 	})
 	addCronJob(c, options["peer_refresh"].GetValue().(string), func() {
-		s.refreshPeers()
+		n.refreshPeers()
 	})
 	addCronJob(c, STATS_REFRESH_INTERVAL, func() {
-		s.PrintStats()
+		n.PrintStats()
 	})
 	c.Start()
 }
@@ -33,33 +33,33 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 	}
 }
 
-func (s *Node) refreshGraph() {
+func (n *Node) refreshGraph() {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph")
 
-	channelList, err := s.lightning.ListChannels()
+	channelList, err := n.lightning.ListChannels()
 	if err != nil {
 		log.Printf("error listing channels: %v\n", err)
 	}
 
-	s.Graph.RefreshChannels(channelList)
+	n.Graph.RefreshChannels(channelList)
 
-	nodes, err := s.lightning.ListNodes()
+	nodes, err := n.lightning.ListNodes()
 	if err != nil {
 		log.Printf("error listing nodes: %v\n", err)
 	}
-	s.Graph.RefreshAliases(nodes)
-	s.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
+	n.Graph.RefreshAliases(nodes)
+	n.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
 }
 
-func (s *Node) refreshPeers() {
+func (n *Node) refreshPeers() {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers")
 	newPeers := make(map[string]*glightning.Peer)
-	peers, err := s.lightning.ListPeers()
+	peers, err := n.lightning.ListPeers()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	for _, peer := range peers {
 		newPeers[peer.Id] = peer
 	}
-	s.Peers = newPeers
+	n.Peers = newPeers
 }

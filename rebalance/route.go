@@ -4,11 +4,9 @@ import (
 	"circular/graph"
 	"circular/util"
 	"log"
-	"time"
 )
 
 func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
-	defer util.TimeTrack(time.Now(), "rebalance.getRoute")
 	exclude := make(map[string]bool)
 	exclude[r.Node.Id] = true
 

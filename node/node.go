@@ -21,54 +21,57 @@ var (
 )
 
 type Node struct {
-	lightning *glightning.Lightning
-	Id        string
-	Peers     map[string]*glightning.Peer
-	Graph     *graph.Graph
-	DB        *Store
+	lightning           *glightning.Lightning
+	Id                  string
+	Peers               map[string]*glightning.Peer
+	Graph               *graph.Graph
+	DB                  *Store
+	LiquidityUpdateChan chan *LiquidityUpdate
 }
 
 func GetNode() *Node {
 	once.Do(func() {
 		rand.Seed(time.Now().UnixNano())
 		singleton = &Node{
-			Peers: make(map[string]*glightning.Peer),
+			Peers:               make(map[string]*glightning.Peer),
+			LiquidityUpdateChan: make(chan *LiquidityUpdate, 16),
 		}
+		go singleton.UpdateLiquidity()
 	})
 	return singleton
 }
 
-func (s *Node) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
-	s.lightning = lightning
+func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
+	n.lightning = lightning
 
-	info, err := s.lightning.GetInfo()
+	info, err := n.lightning.GetInfo()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	s.Id = info.Id
-	s.Graph = graph.NewGraph()
+	n.Id = info.Id
+	n.Graph = graph.NewGraph()
 	g := graph.LoadFromFile(CIRCULAR_DIR + "/" + graph.FILE)
 	if g != nil {
-		s.Graph = g
+		n.Graph = g
 	}
-	s.refreshGraph()
-	s.refreshPeers()
-	s.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
-	s.setupCronJobs(options)
+	n.refreshGraph()
+	n.refreshPeers()
+	n.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
+	n.setupCronJobs(options)
 }
 
-func (s *Node) PrintStats() {
+func (n *Node) PrintStats() {
 	log.Println("Node stats:")
-	log.Println("  Peers:", len(s.Peers))
+	log.Println("  Peers:", len(n.Peers))
 
-	s.Graph.PrintStats()
-	
-	successes, err := s.DB.ListSuccesses()
+	n.Graph.PrintStats()
+
+	successes, err := n.DB.ListSuccesses()
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("successes:", len(successes))
-	failures, err := s.DB.ListFailures()
+	failures, err := n.DB.ListFailures()
 	if err != nil {
 		log.Println(err)
 	}
