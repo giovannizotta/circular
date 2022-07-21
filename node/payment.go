@@ -13,6 +13,7 @@ import (
 const (
 	FAILURE_PREFIX  = "f_"
 	SUCCESS_PREFIX  = "s_"
+	TIMEOUT_PREFIX  = "timeout_"
 	SENDPAY_TIMEOUT = 120 // 2 minutes
 )
 
@@ -27,7 +28,13 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	result, err := n.lightning.WaitSendPay(paymentHash, SENDPAY_TIMEOUT)
 	if err != nil {
 		if err.Error() == util.ErrSendPayTimeout.Error() {
+			// delete the preimage from the DB. In this way the payment will fail when the HTLC comes in
 			err = n.DB.Delete(paymentHash)
+			if err != nil {
+				log.Println(err)
+			}
+			// save the failure in the DB. This will be used to update the liquidity
+			err = n.DB.Set(TIMEOUT_PREFIX+paymentHash, []byte("timeout"))
 			if err != nil {
 				log.Println(err)
 			}
@@ -39,11 +46,19 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 }
 
 func (n *Node) deleteIfOurs(paymentHash string) error {
-	_, err := n.DB.Get(paymentHash)
+	key := paymentHash
+	_, err := n.DB.Get(key)
+	// check if this payment was made by us
 	if err == badger.ErrKeyNotFound {
-		return err // this payment was not made by us
+		// check if the payment timed out
+		key = TIMEOUT_PREFIX + paymentHash
+		_, err = n.DB.Get(key)
+		if err == badger.ErrKeyNotFound {
+			return err // this payment was not made by us
+		}
 	}
-	err = n.DB.Delete(paymentHash)
+
+	err = n.DB.Delete(key)
 	if err != nil {
 		log.Println(err)
 		return err
