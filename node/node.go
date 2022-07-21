@@ -49,13 +49,17 @@ func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 		log.Fatalln(err)
 	}
 	n.Id = info.Id
+
 	g, err := graph.LoadFromFile(config.LightningDir + "/" + CIRCULAR_DIR + "/" + graph.FILE)
 	if err == nil {
+		// If we have a graph, we're good to go
 		n.Graph = g
 	} else if err == util.ErrNoGraphToLoad {
+		// If we don't have a graph, we need to create one
 		log.Println(err)
 		n.Graph = graph.NewGraph()
 	} else {
+		// If we have an error, we're in trouble
 		log.Fatalln(err)
 	}
 
