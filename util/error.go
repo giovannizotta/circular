@@ -32,4 +32,5 @@ var (
 	ErrNoRoute             = errors.New("no route")
 	ErrNoOutgoingChannel   = errors.New("no outgoing channel")
 	ErrNoIncomingChannel   = errors.New("no incoming channel")
+	ErrNoGraphToLoad       = errors.New("no graph to load")
 )

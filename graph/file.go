@@ -8,29 +8,34 @@ import (
 	"time"
 )
 
-func LoadFromFile(filename string) *Graph {
+func LoadFromFile(filename string) (*Graph, error) {
 	defer util.TimeTrack(time.Now(), "graph.LoadFromFile")
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Println("unable to load graph data:", err, ", looking for an old file")
 		log.Println("trying to load an old version of the graph")
-		file, err = os.Open(filename + ".old")
+		filename += ".old"
+		file, err = os.Open(filename)
 		if err != nil {
 			log.Println("unable to load any old version of the graph: ", err, ", continuing with a new graph")
-			return nil
+			return nil, util.ErrNoGraphToLoad
 		}
 	}
 	defer file.Close()
+	log.Println("loading graph data from file:", filename)
+
 	g := NewGraph()
-	err = json.NewDecoder(file).Decode(&g)
+
+	err = json.NewDecoder(file).Decode(g)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	for _, c := range g.Channels {
 		g.AddChannel(c)
 	}
-	return g
+	log.Println("graph loaded successfully")
+	return g, nil
 }
 
 func (g *Graph) SaveToFile(dir, filename string) {

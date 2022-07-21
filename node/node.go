@@ -2,6 +2,7 @@ package node
 
 import (
 	"circular/graph"
+	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
@@ -48,15 +49,21 @@ func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 		log.Fatalln(err)
 	}
 	n.Id = info.Id
-	n.Graph = graph.NewGraph()
-	g := graph.LoadFromFile(CIRCULAR_DIR + "/" + graph.FILE)
-	if g != nil {
+	g, err := graph.LoadFromFile(config.LightningDir + "/" + CIRCULAR_DIR + "/" + graph.FILE)
+	if err == nil {
 		n.Graph = g
+	} else if err == util.ErrNoGraphToLoad {
+		log.Println(err)
+		n.Graph = graph.NewGraph()
+	} else {
+		log.Fatalln(err)
 	}
+
 	n.refreshGraph()
 	n.refreshPeers()
 	n.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
 	n.setupCronJobs(options)
+	n.PrintStats()
 }
 
 func (n *Node) PrintStats() {
