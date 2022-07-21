@@ -36,14 +36,12 @@ type Graph struct {
 func NewGraph() *Graph {
 	return &Graph{
 		Channels: make(map[string]*Channel),
+		Inbound:  make(map[string]map[string]Edge),
 		Aliases:  make(map[string]string),
 	}
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
-	if *links == nil {
-		*links = make(map[string]map[string]Edge)
-	}
 	if (*links)[from] == nil {
 		(*links)[from] = make(map[string]Edge)
 	}
