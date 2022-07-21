@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	SENDPAY_TIMEOUT = 120 // 2 minutes
-	CIRCULAR_DIR    = "circular"
-	PEER_REFRESH    = "1m"
+	CIRCULAR_DIR = "circular"
+	PEER_REFRESH = "1m"
 )
 
 var (

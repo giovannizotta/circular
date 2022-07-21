@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	FAILURE_PREFIX = "f_"
-	SUCCESS_PREFIX = "s_"
+	FAILURE_PREFIX  = "f_"
+	SUCCESS_PREFIX  = "s_"
+	SENDPAY_TIMEOUT = 120 // 2 minutes
 )
 
 func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
@@ -25,6 +26,13 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 
 	result, err := n.lightning.WaitSendPay(paymentHash, SENDPAY_TIMEOUT)
 	if err != nil {
+		if err.Error() == util.ErrSendPayTimeout.Error() {
+			err = n.DB.Delete(paymentHash)
+			if err != nil {
+				log.Println(err)
+			}
+			return nil, util.ErrSendPayTimeout
+		}
 		return nil, err
 	}
 	return result, nil
@@ -47,7 +55,7 @@ func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	if err := n.deleteIfOurs(sf.Data.PaymentHash); err != nil {
 		return
 	}
-	
+
 	// save to db
 	bytes, err := json.Marshal(sf)
 	if err != nil {

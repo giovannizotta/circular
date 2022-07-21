@@ -35,6 +35,7 @@ func (r *Rebalance) validateLiquidityParameters(out *graph.Channel, in *graph.Ch
 func (r *Rebalance) setDefaultParameters() error {
 	//convert to msatoshi
 	r.Amount *= 1000
+
 	if r.Amount == 0 {
 		r.Amount = DEFAULT_AMOUNT
 		log.Println("amount not provided, using default value", r.Amount)

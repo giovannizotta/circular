@@ -96,7 +96,7 @@ func (r *Rebalance) Run() (*Result, error) {
 		if err == util.ErrSendPayTimeout {
 			lastError = "rebalancing timed out after " +
 				strconv.Itoa(node.SENDPAY_TIMEOUT) +
-				"s. The payment is still in flight and may still succeed."
+				"s."
 			break
 		}
 
@@ -109,7 +109,7 @@ func (r *Rebalance) Run() (*Result, error) {
 	}
 
 	failure := NewResult("failure", r.Amount/1000, r.OutChannel.Destination, r.InChannel.Source)
-	failure.Attempts = uint64(i)
+	failure.Attempts = uint64(i - 1)
 	failure.Message = "rebalance failed after " + strconv.Itoa(int(failure.Attempts)) + " attempts."
 	failure.Message += lastError
 
@@ -121,6 +121,9 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	result := NewResult("success", r.Amount/1000,
+		r.OutChannel.Destination, r.InChannel.Source)
 
 	// get aliases, if any
 	var srcAlias, dstAlias string
@@ -135,13 +138,9 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 		dstAlias = r.InChannel.Source
 	}
 
-	result := NewResult("success", r.Amount/1000,
-		r.OutChannel.Destination, r.InChannel.Source)
-
 	result.Fee = route.Fee()
 	result.PPM = route.FeePPM()
 	result.Hops = len(route.Hops)
-
 	result.Message = fmt.Sprintf("successfully rebalanced %d sats from %s to %s at %d ppm. Total fees paid: %.3f sats",
 		result.Amount, srcAlias, dstAlias,
 		result.PPM, float64(result.Fee)/1000)
