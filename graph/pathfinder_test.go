@@ -7,9 +7,9 @@ import (
 
 func TestPathfinderBasic(t *testing.T) {
 	t.Log("graph/pathfinder_test.go")
-	graph, _ := LoadFromFile("testdata/graph.json")
-	if graph == nil {
-		t.Fatal("unable to load graph")
+	graph, err := LoadFromFile("testdata/graph.json")
+	if err != nil {
+		t.Fatal(err)
 	}
 	src := "02d41224b71a5346a656f8949c66d11495e39dac55ab8772f55c26ca515db910ea"
 	dst := "03c731efa9935d869d87e57d4496de2b3badfb9ec7dbbd40051fb19351027336c5"
