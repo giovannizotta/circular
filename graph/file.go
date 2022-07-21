@@ -12,11 +12,11 @@ func LoadFromFile(filename string) *Graph {
 	defer util.TimeTrack(time.Now(), "graph.LoadFromFile")
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Println("unable to load from file:", err)
+		log.Println("unable to load graph data:", err, ", looking for an old file")
 		log.Println("trying to load an old version of the graph")
 		file, err = os.Open(filename + ".old")
 		if err != nil {
-			log.Println("unable to load any old version of the file: ", err)
+			log.Println("unable to load any old version of the graph: ", err, ", continuing with a new graph")
 			return nil
 		}
 	}
