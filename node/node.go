@@ -22,6 +22,7 @@ var (
 
 type Node struct {
 	lightning           *glightning.Lightning
+	initLock            *sync.Cond
 	Id                  string
 	Peers               map[string]*glightning.Peer
 	Graph               *graph.Graph
@@ -33,16 +34,22 @@ func GetNode() *Node {
 	once.Do(func() {
 		rand.Seed(time.Now().UnixNano())
 		singleton = &Node{
+			initLock:            sync.NewCond(&sync.Mutex{}),
 			Peers:               make(map[string]*glightning.Peer),
 			LiquidityUpdateChan: make(chan *LiquidityUpdate, 16),
 		}
 		go singleton.UpdateLiquidity()
 	})
+	//wait until init has finished
+	singleton.initLock.L.Lock()
+	singleton.initLock.L.Unlock()
 	return singleton
 }
 
 func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
 	n.lightning = lightning
+	n.initLock.L.Lock()
+	defer n.initLock.L.Unlock()
 
 	info, err := n.lightning.GetInfo()
 	if err != nil {

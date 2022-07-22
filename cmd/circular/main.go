@@ -27,8 +27,8 @@ func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *
 func main() {
 	plugin = glightning.NewPlugin(onInit)
 	registerOptions(plugin)
-	registerSubscriptions(plugin)
 	registerMethods(plugin)
+	registerSubscriptions(plugin)
 	registerHooks(plugin)
 
 	err := plugin.Start(os.Stdin, os.Stdout)
