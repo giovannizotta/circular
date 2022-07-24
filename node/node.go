@@ -40,8 +40,9 @@ func GetNode() *Node {
 		}
 		go singleton.UpdateLiquidity()
 	})
-	//wait until init has finished
+	// This makes sure the node is not used until it is initialized or refreshed
 	singleton.initLock.L.Lock()
+	// unlock it right away.
 	singleton.initLock.L.Unlock()
 	return singleton
 }

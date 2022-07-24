@@ -92,5 +92,13 @@ func (r *RebalanceByNode) validatePeers() error {
 	if r.InNode == r.OutNode {
 		return errors.New("incoming and outgoing nodes are the same")
 	}
+
+	//validate that the nodes are actually peers
+	if _, ok := r.Node.Peers[r.InNode]; !ok {
+		return util.ErrNoPeer
+	}
+	if _, ok := r.Node.Peers[r.OutNode]; !ok {
+		return util.ErrNoPeer
+	}
 	return nil
 }
