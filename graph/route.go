@@ -12,8 +12,8 @@ const (
 
 type RouteHop struct {
 	*Channel
-	MilliSatoshi uint64
-	Delay        uint
+	MilliSatoshi uint64 `json:"millisatoshi"`
+	Delay        uint   `json:"delay"`
 }
 
 type Route struct {

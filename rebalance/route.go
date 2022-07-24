@@ -40,7 +40,7 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 		return nil, err
 	}
 
-	log.Println(route)
+	log.Println(graph.NewPrettyRoute(route))
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {

@@ -140,7 +140,7 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 
 	result.Fee = route.Fee()
 	result.PPM = route.FeePPM()
-	result.Hops = len(route.Hops)
+	result.Route = graph.NewPrettyRoute(route)
 	result.Message = fmt.Sprintf("successfully rebalanced %d sats from %s to %s at %d ppm. Total fees paid: %.3f sats",
 		result.Amount, srcAlias, dstAlias,
 		result.PPM, float64(result.Fee)/1000)
