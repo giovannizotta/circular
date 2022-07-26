@@ -21,10 +21,10 @@ const (
 // Edge contains All the SCIDs of the channels going from nodeA to nodeB
 type Edge []string
 
-// Graph is the lightning network graph from the perspective of self
+// Graph is the lightning network graph from the perspective of our node
 // It has been built from the gossip received by lightningd.
-// To access the edges flowing out from a node, use: g.Outbound[node]
-// To access an edge between nodeA and nodeB, use: g.Outbound[nodeA][nodeB]
+// To access the edges flowing into a node, use: g.Inbound[node]
+// To access an edge into nodeA from nodeB, use: g.Inbound[nodeA][nodeB]
 // * an edge consists of one or more SCIDs between nodeA and nodeB
 // To access a channel via channelId (scid/direction). use: g.Channels[channelId]
 type Graph struct {
