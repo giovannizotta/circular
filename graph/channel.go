@@ -50,10 +50,12 @@ func (c *Channel) GetDirection() uint8 {
 
 func (c *Channel) CanForward(amount uint64) bool {
 	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+	minHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMinimumMilliSatoshis, "msat"), 10, 64)
 	conditions := []bool{
 		c.Liquidity >= amount,
 		c.IsActive,
 		maxHtlcMsat >= amount,
+		minHtlcMsat <= amount,
 	}
 	return util.All(conditions)
 }
