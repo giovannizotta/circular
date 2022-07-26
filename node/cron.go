@@ -63,5 +63,6 @@ func (n *Node) refreshPeers() {
 	}
 	for _, peer := range peers {
 		n.Peers[peer.Id] = peer
+		n.RefreshPeerChannels(peer.Id)
 	}
 }

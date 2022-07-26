@@ -39,9 +39,6 @@ func (r *RebalanceByScid) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
-	r.Node.RefreshPeer(outPeer.Id)
-	r.Node.RefreshPeer(inPeer.Id)
-
 	outgoingChannelId := r.OutScid + "/" + util.GetDirection(r.Node.Id, outPeer.Id)
 	if _, ok := r.Node.Graph.Channels[outgoingChannelId]; !ok {
 		return nil, util.ErrNoOutgoingChannel

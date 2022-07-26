@@ -12,7 +12,7 @@ import (
 
 const (
 	CIRCULAR_DIR = "circular"
-	PEER_REFRESH = "1m"
+	PEER_REFRESH = "30s"
 )
 
 var (
@@ -74,8 +74,10 @@ func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightni
 
 	n.refreshGraph()
 	n.refreshPeers()
+
 	n.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
 	n.setupCronJobs(options)
+
 	n.PrintStats()
 }
 

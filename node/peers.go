@@ -44,12 +44,7 @@ func (n *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
 	return nil, util.ErrNoPeerChannel
 }
 
-func (n *Node) RefreshPeer(id string) {
-	peer, err := n.lightning.GetPeer(id)
-	if err != nil {
-		log.Println(err)
-	}
-	n.Peers[id] = peer
+func (n *Node) RefreshPeerChannels(id string) {
 	channels, err := n.lightning.ListChannelsBySource(id)
 	if err != nil {
 		log.Println(err)
