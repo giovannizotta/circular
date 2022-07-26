@@ -103,3 +103,12 @@ func (n *Node) PrintStats() {
 	}
 	log.Println("failures:", len(failures))
 }
+
+func (n *Node) RefreshChannel(channel *graph.Channel) {
+	channels, err := n.lightning.GetChannel(channel.ShortChannelId)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	n.Graph.RefreshChannels(channels)
+}
