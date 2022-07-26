@@ -26,7 +26,7 @@ type Edge []string
 // It has been built from the gossip received by lightningd.
 // To access the edges flowing into a node, use: g.Inbound[node]
 // To access an edge into nodeA from nodeB, use: g.Inbound[nodeA][nodeB]
-// * an edge consists of one or more SCIDs between nodeA and nodeB
+// * an edge consists of an array of SCIDs between nodeA and nodeB
 // To access a channel via channelId (scid/direction). use: g.Channels[channelId]
 type Graph struct {
 	Channels map[string]*Channel        `json:"channels"`
@@ -124,8 +124,26 @@ func (g *Graph) PruneChannels() {
 	// TODO: remove closed channels, but might be worth waiting for glightning to implement channel_state_changed
 	for _, c := range g.Channels {
 		if c.LastUpdate+PRUNING_INTERVAL < now {
-			delete(g.Channels, c.ShortChannelId+"/0")
-			delete(g.Channels, c.ShortChannelId+"/1")
+			g.DeleteChannel(c)
 		}
 	}
+}
+
+func (g *Graph) DeleteChannel(c *Channel) {
+	// delete from channel map
+	delete(g.Channels, c.ShortChannelId+"/"+util.GetDirection(c.Source, c.Destination))
+
+	// delete from adjacency list
+	for i, edge := range g.Inbound[c.Destination][c.Source] {
+		if edge == c.ShortChannelId {
+			g.Inbound[c.Destination][c.Source] = remove(g.Inbound[c.Destination][c.Source], i)
+			break
+		}
+	}
+}
+
+// assumes valid input
+func remove(s []string, i int) []string {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
