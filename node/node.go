@@ -90,6 +90,11 @@ func (n *Node) PrintStats() {
 		log.Println(err)
 	}
 	log.Println("successes:", len(successes))
+	var totalMoved uint64 = 0
+	for _, s := range successes {
+		totalMoved += s.MilliSatoshi
+	}
+	log.Println("Total amount of BTC rebalanced: ", totalMoved/1000, "sats")
 	failures, err := n.DB.ListFailures()
 	if err != nil {
 		log.Println(err)
