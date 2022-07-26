@@ -3,6 +3,7 @@ package node
 import (
 	"circular/graph"
 	"circular/util"
+	"fmt"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
@@ -22,6 +23,7 @@ var (
 
 type Node struct {
 	lightning           *glightning.Lightning
+	plugin              *glightning.Plugin
 	initLock            *sync.Cond
 	Id                  string
 	Peers               map[string]*glightning.Peer
@@ -47,67 +49,87 @@ func GetNode() *Node {
 	return singleton
 }
 
-func (n *Node) Init(lightning *glightning.Lightning, options map[string]glightning.Option, config *glightning.Config) {
+func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
 	defer util.TimeTrack(time.Now(), "Node.Init")
 	n.lightning = lightning
+	n.plugin = plugin
 	n.initLock.L.Lock()
 	defer n.initLock.L.Unlock()
 
+	n.Logln(glightning.Info, "initializing node")
+	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	n.Id = info.Id
 
+	n.Logln(glightning.Debug, "loading from file")
 	g, err := graph.LoadFromFile(config.LightningDir + "/" + CIRCULAR_DIR + "/" + graph.FILE)
 	if err == nil {
 		// If we have a graph, we're good to go
+		n.Logln(glightning.Debug, "loaded graph from file")
 		n.Graph = g
 	} else if err == util.ErrNoGraphToLoad {
 		// If we don't have a graph, we need to create one
-		log.Println(err)
+		n.Logln(glightning.Unusual, err)
 		n.Graph = graph.NewGraph()
 	} else {
 		// If we have an error, we're in trouble
+		n.Logln(glightning.Unusual, err)
 		log.Fatalln(err)
 	}
 
+	n.Logln(glightning.Debug, "refreshing graph")
 	n.refreshGraph()
+	n.Logln(glightning.Debug, "refreshing peers")
 	n.refreshPeers()
 
+	n.Logln(glightning.Debug, "opening database")
 	n.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)
+
+	n.Logln(glightning.Debug, "setting up cronjobs")
 	n.setupCronJobs(options)
 
 	n.PrintStats()
+	n.Logln(glightning.Info, "node initialized")
+}
+
+func (n *Node) Logf(level glightning.LogLevel, format string, v ...any) {
+	n.plugin.Log(fmt.Sprintf(format, v...), level)
+}
+
+func (n *Node) Logln(level glightning.LogLevel, v ...any) {
+	n.plugin.Log(fmt.Sprint(v...), level)
 }
 
 func (n *Node) PrintStats() {
-	log.Println("Node stats:")
-	log.Println("  Peers:", len(n.Peers))
+	n.Logln(glightning.Info, "Node stats:")
+	n.Logln(glightning.Info, "Peers:", len(n.Peers))
 
-	n.Graph.PrintStats()
+	n.Logln(glightning.Info, n.Graph.GetStats())
 
 	successes, err := n.DB.ListSuccesses()
 	if err != nil {
-		log.Println(err)
+		n.Logln(glightning.Info, err)
 	}
-	log.Println("successes:", len(successes))
+	n.Logln(glightning.Info, "successes: ", len(successes))
 	var totalMoved uint64 = 0
 	for _, s := range successes {
 		totalMoved += s.MilliSatoshi
 	}
-	log.Println("Total amount of BTC rebalanced: ", totalMoved/1000, "sats")
+	n.Logln(glightning.Info, "Total amount of BTC rebalanced: ", totalMoved/1000, "sats")
 	failures, err := n.DB.ListFailures()
 	if err != nil {
-		log.Println(err)
+		n.Logln(glightning.Info, err)
 	}
-	log.Println("failures:", len(failures))
+	n.Logln(glightning.Info, "failures: ", len(failures))
 }
 
 func (n *Node) RefreshChannel(channel *graph.Channel) {
 	channels, err := n.lightning.GetChannel(channel.ShortChannelId)
 	if err != nil {
-		log.Println(err)
+		n.Logln(glightning.Unusual, err)
 		return
 	}
 	n.Graph.RefreshChannels(channels)

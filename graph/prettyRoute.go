@@ -106,3 +106,16 @@ func (r *PrettyRoute) String() string {
 	}
 	return result
 }
+
+func (r *PrettyRoute) Simple() string {
+	var result string
+	result += "Sending" + strconv.FormatUint(r.Amount, 10) + " sats from " + r.SourceAlias + " to " + r.DestinationAlias
+	result += " via "
+	for i := 0; i < len(r.Hops); i++ {
+		alias := r.Hops[i].Alias
+		feePPM := r.Hops[i].FeePPM
+		result += "- " + alias + " (" + strconv.FormatUint(feePPM, 10) + "ppm) "
+	}
+	result += "costing " + strconv.FormatUint(r.Fee, 10) + "msat"
+	return result
+}

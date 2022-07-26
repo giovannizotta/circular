@@ -3,6 +3,7 @@ package rebalance
 import (
 	"circular/graph"
 	"circular/util"
+	"github.com/elementsproject/glightning/glightning"
 	"log"
 )
 
@@ -35,12 +36,15 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 		return nil, err
 	}
 
+	r.Node.Logln(glightning.Debug, "generating route")
 	route, err := r.getRoute(maxHops)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println(graph.NewPrettyRoute(route))
+	prettyRoute := graph.NewPrettyRoute(route)
+	r.Node.Logln(glightning.Debug, prettyRoute)
+	r.Node.Logln(glightning.Info, prettyRoute.Simple())
 
 	_, err = r.Node.SendPay(route, paymentSecret)
 	if err != nil {

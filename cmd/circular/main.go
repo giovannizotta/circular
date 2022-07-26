@@ -13,14 +13,14 @@ var (
 )
 
 // This is called after the plugin starts up successfully
-func onInit(_ *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
+func onInit(plugin *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
 	lightning = glightning.NewLightning()
 	err := lightning.StartUp(config.RpcFile, config.LightningDir)
 	if err != nil {
 		log.Fatalln("error starting plugin: ", err)
 	}
 
-	node.GetNode().Init(lightning, options, config)
+	node.GetNode().Init(lightning, plugin, options, config)
 	log.Printf("circular successfully init'd!\n")
 }
 

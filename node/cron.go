@@ -41,22 +41,29 @@ func (n *Node) refreshGraph() {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph")
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
-		log.Printf("error listing channels: %v\n", err)
+		n.Logf(glightning.Unusual, "error listing channels: %v\n", err)
 	}
 
+	n.Logln(glightning.Debug, "refreshing channels")
 	n.Graph.RefreshChannels(channelList)
+
+	n.Logln(glightning.Debug, "pruning channels")
 	n.Graph.PruneChannels()
 
+	n.Logln(glightning.Debug, "refreshing aliases")
 	nodes, err := n.lightning.ListNodes()
 	if err != nil {
-		log.Printf("error listing nodes: %v\n", err)
+		n.Logf(glightning.Unusual, "error listing nodes: %v\n", err)
 	}
 	n.Graph.RefreshAliases(nodes)
+
+	n.Logln(glightning.Debug, "saving graph to file")
 	n.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
 }
 
 func (n *Node) refreshPeers() {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers")
+	n.Logln(glightning.Debug, "refreshing peers")
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
 		log.Fatalln(err)

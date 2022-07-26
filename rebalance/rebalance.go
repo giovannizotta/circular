@@ -6,7 +6,7 @@ import (
 	"circular/util"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/elementsproject/glightning/glightning"
 	"strconv"
 )
 
@@ -65,20 +65,20 @@ func (r *Rebalance) Run() (*Result, error) {
 				strconv.Itoa(r.MaxHops) + " hops. " + lastError
 			break
 		}
-		log.Println("===================== ATTEMPT", i, "=====================")
+		r.Node.Logln(glightning.Debug, "===================== ATTEMPT", i, "=====================")
 
 		result, err := r.runAttempt(maxHops)
 
 		// success
 		if err == nil {
 			result.Attempts = uint64(i)
-			log.Println(result)
+			r.Node.Logln(glightning.Debug, result)
 			return result, nil
 		}
 
 		// no route found with at most maxHops
 		if err == util.ErrNoRoute {
-			log.Println("no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
+			r.Node.Logln(glightning.Debug, "no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
 			lastError = err.Error()
 			maxHops += 1
 			continue
@@ -86,7 +86,7 @@ func (r *Rebalance) Run() (*Result, error) {
 
 		// no route found with at most maxHops cheaper than maxPPM
 		if errors.As(err, &util.ErrRouteTooExpensive{}) {
-			log.Println(err, ", increasing max hops to ", maxHops+1)
+			r.Node.Logln(glightning.Debug, err, ", increasing max hops to ", maxHops+1)
 			lastError = err.Error()
 			maxHops += 1
 			continue
@@ -117,6 +117,7 @@ func (r *Rebalance) Run() (*Result, error) {
 }
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
+	r.Node.Logln(glightning.Debug, "refreshing in and out channels")
 	r.Node.RefreshChannel(r.OutChannel)
 	r.Node.RefreshChannel(r.InChannel)
 
@@ -125,6 +126,7 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 		return nil, err
 	}
 
+	r.Node.Logln(glightning.Debug, "creating route")
 	route, err := r.tryRoute(maxHops)
 	if err != nil {
 		return nil, err

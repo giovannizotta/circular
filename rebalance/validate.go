@@ -3,7 +3,7 @@ package rebalance
 import (
 	"circular/graph"
 	"errors"
-	"log"
+	"github.com/elementsproject/glightning/glightning"
 )
 
 func (r *Rebalance) validateLiquidityParameters(out *graph.Channel, in *graph.Channel) error {
@@ -29,6 +29,7 @@ func (r *Rebalance) validateLiquidityParameters(out *graph.Channel, in *graph.Ch
 	if (outChannel.SpendableMilliSatoshi) < r.Amount {
 		return errors.New("outgoing channel has insufficient local balance")
 	}
+	r.Node.Logln(glightning.Debug, "liquidity parameters validated")
 	return nil
 }
 
@@ -38,19 +39,19 @@ func (r *Rebalance) setDefaultParameters() error {
 
 	if r.Amount == 0 {
 		r.Amount = DEFAULT_AMOUNT
-		log.Println("amount not provided, using default value", r.Amount)
+		r.Node.Logln(glightning.Debug, "amount not provided, using default value", r.Amount)
 	}
 	if r.MaxPPM == 0 {
 		r.MaxPPM = DEFAULT_MAXPPM
-		log.Println("maxPPM not provided, using default value", r.MaxPPM)
+		r.Node.Logln(glightning.Debug, "maxPPM not provided, using default value", r.MaxPPM)
 	}
 	if r.Attempts <= 0 {
 		r.Attempts = DEFAULT_ATTEMPTS
-		log.Println("attempts not provided, using default value", r.Attempts)
+		r.Node.Logln(glightning.Debug, "attempts not provided, using default value", r.Attempts)
 	}
 	if r.MaxHops <= 0 {
 		r.MaxHops = DEFAULT_MAXHOPS
-		log.Println("maxHops not provided, using default value", r.MaxHops)
+		r.Node.Logln(glightning.Debug, "maxHops not provided, using default value", r.MaxHops)
 	}
 	return nil
 }
