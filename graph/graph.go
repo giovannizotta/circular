@@ -57,9 +57,7 @@ func (g *Graph) AddChannel(c *Channel) {
 }
 
 func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
-	// TODO: remove stale channels
 	// we need to do NewChannel and not only update the liquidity because of gossip updates
-	defer util.TimeTrack(time.Now(), "graph.RefreshChannels")
 	for _, c := range channelList {
 		var channel *Channel
 		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
