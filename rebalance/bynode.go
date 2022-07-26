@@ -55,6 +55,9 @@ func (r *RebalanceByNode) Call() (jrpc2.Result, error) {
 		return nil, util.ErrNoRequiredParameter
 	}
 
+	r.Node.RefreshPeer(r.OutNode)
+	r.Node.RefreshPeer(r.InNode)
+
 	err := r.validatePeers()
 	if err != nil {
 		return nil, err

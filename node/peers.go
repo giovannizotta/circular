@@ -3,6 +3,7 @@ package node
 import (
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
+	"log"
 )
 
 func (n *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
@@ -41,4 +42,17 @@ func (n *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
 		}
 	}
 	return nil, util.ErrNoPeerChannel
+}
+
+func (n *Node) RefreshPeer(id string) {
+	peer, err := n.lightning.GetPeer(id)
+	if err != nil {
+		log.Println(err)
+	}
+	n.Peers[id] = peer
+	channels, err := n.lightning.ListChannelsBySource(id)
+	if err != nil {
+		log.Println(err)
+	}
+	n.Graph.RefreshChannels(channels)
 }

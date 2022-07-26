@@ -117,6 +117,15 @@ func (r *Rebalance) Run() (*Result, error) {
 }
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
+	// refresh the peer channels in case they have changed fees/liquidity/state/whatever
+	r.Node.RefreshPeer(r.OutChannel.Destination)
+	r.Node.RefreshPeer(r.InChannel.Source)
+
+	err := r.validateLiquidityParameters(r.OutChannel, r.InChannel)
+	if err != nil {
+		return nil, err
+	}
+
 	route, err := r.tryRoute(maxHops)
 	if err != nil {
 		return nil, err

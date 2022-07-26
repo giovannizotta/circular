@@ -56,13 +56,11 @@ func (n *Node) refreshGraph() {
 
 func (n *Node) refreshPeers() {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers")
-	newPeers := make(map[string]*glightning.Peer)
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	for _, peer := range peers {
-		newPeers[peer.Id] = peer
+		n.Peers[peer.Id] = peer
 	}
-	n.Peers = newPeers
 }
