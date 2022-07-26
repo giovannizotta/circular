@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	GRAPH_REFRESH        = "10m"
-	FILE                 = "graph.json"
-	AVERAGE_AGING_AMOUNT = 0 // the amount by which the liquidity belief is updated
-	AGING_VARIANCE       = 0 // the range (+/-) of the random amount added to the liquidity belief
+	GRAPH_REFRESH             = "10m"
+	FILE                      = "graph.json"
+	PRUNING_INTERVAL     uint = 1209600 // 14 days
+	AVERAGE_AGING_AMOUNT      = 0       // the amount by which the liquidity belief is updated
+	AGING_VARIANCE            = 0       // the range (+/-) of the random amount added to the liquidity belief
 	// for example, for an AVERAGE_AGING_AMOUNT of 10k and an AGING_VARIANCE of 5k
 	// the liquidity belief will be updated by a random amount between 5k and 15k	(10k +- 5k)
 )
@@ -115,4 +116,18 @@ func (g *Graph) PrintStats() {
 	log.Println("graph has", activeChannels, "active channels")
 	log.Println("graph has", atLeast200kLiquidity, "channels believed to have at least 200k liquidity")
 	log.Println("graph has", atLeast200kMaxHtlc, "channels with at least 200k max htlc")
+}
+
+func (g *Graph) PruneChannels() {
+	// get current time in seconds
+	now := uint(time.Now().Unix())
+
+	// prune channels that are older than PRUNING_INTERVAL
+	// TODO: remove closed channels, but might be worth waiting for glightning to implement channel_state_changed
+	for _, c := range g.Channels {
+		if c.LastUpdate+PRUNING_INTERVAL < now {
+			delete(g.Channels, c.ShortChannelId+"/0")
+			delete(g.Channels, c.ShortChannelId+"/1")
+		}
+	}
 }

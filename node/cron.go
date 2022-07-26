@@ -45,6 +45,7 @@ func (n *Node) refreshGraph() {
 	}
 
 	n.Graph.RefreshChannels(channelList)
+	n.Graph.PruneChannels()
 
 	nodes, err := n.lightning.ListNodes()
 	if err != nil {
