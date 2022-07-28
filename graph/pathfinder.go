@@ -119,7 +119,7 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	if distance[src] == maxDistance {
 		return nil, util.ErrNoRoute
 	}
-
+	
 	// now we have the hop map, we can build the hops
 	hops := make([]RouteHop, 0, 10)
 	for u := src; u != dst; u = hop[u].Destination {
