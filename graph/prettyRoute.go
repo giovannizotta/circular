@@ -116,7 +116,7 @@ func (r *PrettyRoute) Simple() string {
 	for i := 0; i < len(r.Hops); i++ {
 		alias := r.Hops[i].Alias
 		feePPM := r.Hops[i].FeePPM
-		result += "=> " + alias + " (" + strconv.FormatUint(feePPM, 10) + "PPM) "
+		result += "- " + alias + " (" + strconv.FormatUint(feePPM, 10) + "PPM) "
 	}
 	return result
 }
