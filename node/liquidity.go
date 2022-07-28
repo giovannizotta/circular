@@ -14,6 +14,7 @@ type LiquidityUpdate struct {
 func (n *Node) UpdateLiquidity() {
 	for {
 		update := <-n.LiquidityUpdateChan
+		n.initLock.L.Lock()
 		n.Logf(glightning.Debug, "LiquidityUpdate: %+v", update)
 
 		direction := strconv.Itoa(update.Direction)
@@ -37,5 +38,6 @@ func (n *Node) UpdateLiquidity() {
 		} else {
 			n.Logln(glightning.Unusual, "opposite channel not found:", oppositeChannelId)
 		}
+		n.initLock.L.Unlock()
 	}
 }
