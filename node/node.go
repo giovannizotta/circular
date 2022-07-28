@@ -99,11 +99,11 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 }
 
 func (n *Node) Logf(level glightning.LogLevel, format string, v ...any) {
-	n.plugin.Log(fmt.Sprintf(format, v...), level)
+	n.plugin.Log(util.GetCallInfo()+fmt.Sprintf(format, v...), level)
 }
 
 func (n *Node) Logln(level glightning.LogLevel, v ...any) {
-	n.plugin.Log(fmt.Sprint(v...), level)
+	n.plugin.Log(util.GetCallInfo()+fmt.Sprint(v...), level)
 }
 
 func (n *Node) PrintStats() {

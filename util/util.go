@@ -1,6 +1,11 @@
 package util
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+	"runtime"
+	"strings"
+)
 
 func All(v []bool) bool {
 	for _, b := range v {
@@ -40,4 +45,22 @@ func RandRange(min, max uint64) uint64 {
 		return 0
 	}
 	return min + (uint64(rand.Int63()) % (max - min))
+}
+
+func RemoveBeforeCharacter(s string, sep string) string {
+	if len(sep) == 0 {
+		return s
+	}
+	splits := strings.Split(s, sep)
+	return splits[len(splits)-1]
+}
+
+func GetCallInfo() string {
+	pc := make([]uintptr, 15)
+	offset := runtime.Callers(3, pc)
+	frames := runtime.CallersFrames(pc[:offset])
+	frame, _ := frames.Next()
+	filename := RemoveBeforeCharacter(frame.File, "/")
+	function := RemoveBeforeCharacter(frame.Function, ".")
+	return fmt.Sprintf("%s:%d %s: ", filename, frame.Line, function)
 }
