@@ -1,13 +1,39 @@
 package graph
 
 import (
+	"circular/util"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
+func LoadGraphFromFile(dir, filename string) (*Graph, error) {
+	file, err := os.Open(dir + "/" + filename)
+	if err != nil {
+		if err != nil {
+			return nil, util.ErrNoGraphToLoad
+		}
+	}
+	defer file.Close()
+
+	g := NewGraph()
+
+	err = json.NewDecoder(file).Decode(g)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range g.Channels {
+		g.AddChannel(c)
+	}
+	return g, nil
+}
+
 func TestPathfinderBasic(t *testing.T) {
 	t.Log("graph/pathfinder_test.go")
-	graph, err := LoadFromFile("testdata/graph.json")
+
+	graph, err := LoadGraphFromFile("testdata", "graph.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,6 +44,7 @@ func TestPathfinderBasic(t *testing.T) {
 		"02a30b35b374b0bde273f2e36f1a6db9b1d9f4591d00416ffa541b6eb16e70921f": true,
 	}
 	maxHops := 10
+
 	hops, err := graph.dijkstra(src, dst, uint64(amount), exclude, maxHops)
 	if err != nil {
 		t.Fatal(err)
