@@ -8,7 +8,7 @@ import (
 )
 
 func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
-	defer r.Node.Logln(glightning.Debug, util.TimeTrack(time.Now(), "getRoute"))
+	defer util.TimeTrack(time.Now(), "rebalance.getRoute", r.Node.Logf)
 	exclude := make(map[string]bool)
 	exclude[r.Node.Id] = true
 

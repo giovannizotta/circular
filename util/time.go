@@ -1,11 +1,11 @@
 package util
 
 import (
-	"fmt"
+	"github.com/elementsproject/glightning/glightning"
 	"time"
 )
 
-func TimeTrack(start time.Time, name string) string {
+func TimeTrack(start time.Time, action string, loggingFunc func(level glightning.LogLevel, format string, v ...any)) {
 	elapsed := time.Since(start)
-	return fmt.Sprintf("%s took %.3fms", name, float64(elapsed.Microseconds())/1000)
+	loggingFunc(glightning.Debug, "%s took %.3fms", action, float64(elapsed.Microseconds())/1000)
 }

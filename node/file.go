@@ -10,7 +10,7 @@ import (
 )
 
 func (n *Node) LoadGraphFromFile(dir, filename string) error {
-	defer n.Logln(glightning.Debug, util.TimeTrack(time.Now(), "graph.LoadGraphFromFile"))
+	defer util.TimeTrack(time.Now(), "graph.LoadGraphFromFile", n.Logf)
 	file, err := os.Open(dir + "/" + filename)
 	if err != nil {
 		n.Logln(glightning.Debug, "unable to load graph data:", err, ", looking for an old file")
@@ -41,7 +41,7 @@ func (n *Node) LoadGraphFromFile(dir, filename string) error {
 }
 
 func (n *Node) SaveGraphToFile(dir, filename string) error {
-	defer n.Logln(glightning.Debug, util.TimeTrack(time.Now(), "graph.SaveGraphToFile"))
+	defer util.TimeTrack(time.Now(), "graph.SaveGraphToFile", n.Logf)
 
 	//check if dir exists, otherwise create it
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
