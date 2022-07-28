@@ -22,10 +22,10 @@ type Route struct {
 	Graph       *Graph
 }
 
-func NewRoute(in string, out string, amount uint64, hops []RouteHop, graph *Graph) *Route {
+func NewRoute(src, dst string, amount uint64, hops []RouteHop, graph *Graph) *Route {
 	return &Route{
-		Destination: in,
-		Source:      out,
+		Destination: dst,
+		Source:      src,
 		Amount:      amount,
 		Hops:        hops,
 		Graph:       graph,
