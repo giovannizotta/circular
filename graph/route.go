@@ -1,9 +1,7 @@
 package graph
 
 import (
-	"fmt"
 	"github.com/elementsproject/glightning/glightning"
-	"strconv"
 )
 
 const (
@@ -85,34 +83,4 @@ func (r *Route) ToLightningRoute() []glightning.RouteHop {
 		})
 	}
 	return hops
-}
-
-func (r *Route) String() string {
-	var result string
-	result += "Route from: " + r.Source[:8] + " to: " + r.Destination[:8] + "\n"
-	result += "Amount: " + strconv.FormatUint(r.Amount/1000, 10) + "\n"
-	result += "Fee: " + strconv.FormatUint(r.Fee(), 10) + "msat\n"
-	result += "Fee PPM: " + strconv.FormatUint(r.FeePPM(), 10) + "\n"
-	result += "Hops: " + strconv.Itoa(len(r.Hops)) + "\n"
-
-	from := r.Hops[0].Source
-	if alias, ok := r.Graph.Aliases[from]; ok {
-		from = alias
-	}
-
-	result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d, scid: %s, delay: %d\n",
-		1, from, 0.0, 0, r.Hops[0].ShortChannelId, r.Hops[0].Delay)
-	for i := 1; i < len(r.Hops); i++ {
-		fee := r.Hops[i-1].MilliSatoshi - r.Hops[i].MilliSatoshi
-		feePPM := fee * 1000000 / r.Hops[i].MilliSatoshi
-		from = r.Hops[i].Source
-		if alias, ok := r.Graph.Aliases[from]; ok {
-			from = alias
-		}
-		result += fmt.Sprintf("Hop %2d: %40s, fee: %8.3f, ppm: %5d, scid: %s, delay: %d\n",
-			i+1, from,
-			float64(fee)/1000, feePPM,
-			r.Hops[i].ShortChannelId, r.Hops[i].Delay)
-	}
-	return result
 }

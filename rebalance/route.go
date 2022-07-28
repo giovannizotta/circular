@@ -4,7 +4,6 @@ import (
 	"circular/graph"
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
-	"log"
 )
 
 func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
@@ -14,6 +13,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	src := r.OutChannel.Destination
 	dst := r.InChannel.Source
 
+	r.Node.Logln(glightning.Debug, "looking for a route from", src, "to", dst)
 	route, err := r.Node.Graph.GetRoute(src, dst, r.Amount, exclude, maxHops)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,6 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	route.Append(r.InChannel)
 
 	if route.FeePPM() > r.MaxPPM {
-		log.Println("best route found was: ", route)
 		return nil, util.NewRouteTooExpensiveError(route.FeePPM(), r.MaxPPM)
 	}
 

@@ -29,7 +29,6 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		log.Println("src:", util.ErrNoSuchNode)
 		return nil, util.ErrNoSuchNode
 	}
-	log.Println("looking for a route from", src, "to", dst)
 	distance := make(map[string]int)
 	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
