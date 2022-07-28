@@ -62,6 +62,7 @@ func (n *Node) refreshGraph() error {
 	n.Logln(glightning.Debug, "saving graph to file")
 	err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json")
 	if err != nil {
+		n.Logf(glightning.Unusual, "error saving graph to file: %v\n", err)
 		return err
 	}
 	return nil

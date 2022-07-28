@@ -126,7 +126,6 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 		return nil, err
 	}
 
-	r.Node.Logln(glightning.Debug, "creating route")
 	route, err := r.tryRoute(maxHops)
 	if err != nil {
 		return nil, err
