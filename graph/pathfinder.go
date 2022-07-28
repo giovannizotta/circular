@@ -4,7 +4,6 @@ import (
 	"circular/util"
 	"container/heap"
 	"log"
-	"time"
 )
 
 func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool, maxHops int) (*Route, error) {
@@ -20,7 +19,6 @@ func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool
 func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool, maxHops int) ([]RouteHop, error) {
 	// start from the destination and find the source so that we can compute fees
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
-	defer util.TimeTrack(time.Now(), "graph.dijkstra")
 	if _, ok := g.Inbound[dst]; !ok {
 		return nil, util.ErrNoSuchNode
 	}

@@ -38,7 +38,7 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 }
 
 func (n *Node) refreshGraph() error {
-	defer util.TimeTrack(time.Now(), "node.refreshGraph")
+	defer n.Logln(glightning.Debug, util.TimeTrack(time.Now(), "node.refreshGraph"))
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
 		n.Logf(glightning.Unusual, "error listing channels: %v\n", err)
@@ -65,7 +65,7 @@ func (n *Node) refreshGraph() error {
 }
 
 func (n *Node) refreshPeers() error {
-	defer util.TimeTrack(time.Now(), "node.refreshPeers")
+	defer n.Logln(glightning.Debug, util.TimeTrack(time.Now(), "node.refreshPeers"))
 	n.Logln(glightning.Debug, "refreshing peers")
 	peers, err := n.lightning.ListPeers()
 	if err != nil {

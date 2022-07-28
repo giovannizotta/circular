@@ -4,9 +4,11 @@ import (
 	"circular/graph"
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
+	"time"
 )
 
 func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
+	defer r.Node.Logln(glightning.Debug, util.TimeTrack(time.Now(), "getRoute"))
 	exclude := make(map[string]bool)
 	exclude[r.Node.Id] = true
 

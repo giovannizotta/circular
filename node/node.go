@@ -50,7 +50,7 @@ func GetNode() *Node {
 }
 
 func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
-	defer util.TimeTrack(time.Now(), "Node.Init")
+	defer n.Logln(glightning.Info, util.TimeTrack(time.Now(), "Node.Init"))
 	n.lightning = lightning
 	n.plugin = plugin
 	n.initLock.L.Lock()

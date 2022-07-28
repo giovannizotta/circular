@@ -1,11 +1,11 @@
 package util
 
 import (
-	"log"
+	"fmt"
 	"time"
 )
 
-func TimeTrack(start time.Time, name string) {
+func TimeTrack(start time.Time, name string) string {
 	elapsed := time.Since(start)
-	log.Printf("%s took %.3fms", name, float64(elapsed.Microseconds())/1000)
+	return fmt.Sprintf("%s took %.3fms", name, float64(elapsed.Microseconds())/1000)
 }

@@ -17,7 +17,7 @@ const (
 )
 
 func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
-	defer util.TimeTrack(time.Now(), "node.SendPay")
+	defer n.Logln(glightning.Debug, util.TimeTrack(time.Now(), "node.SendPay"))
 	n.Logln(glightning.Debug, "sending payment")
 	_, err := n.lightning.SendPayLite(route.ToLightningRoute(), paymentHash)
 	if err != nil {
@@ -44,7 +44,7 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 			}
 			return nil, util.ErrSendPayTimeout
 		}
-		n.Logln(glightning.Info, err)
+		n.Logln(glightning.Debug, err)
 		return nil, err
 	}
 	return result, nil
