@@ -109,13 +109,14 @@ func (r *PrettyRoute) String() string {
 
 func (r *PrettyRoute) Simple() string {
 	var result string
-	result += "Sending" + strconv.FormatUint(r.Amount, 10) + " sats from " + r.SourceAlias + " to " + r.DestinationAlias
+	result += "Sending " + strconv.FormatUint(r.Amount, 10) + " sats from [" + r.SourceAlias + "] to [" + r.DestinationAlias
+	result += "] over " + strconv.Itoa(len(r.Hops)) + " hops, costing " + strconv.FormatUint(r.Fee, 10) + "msat ("
+	result += strconv.FormatUint(r.FeePPM, 10) + "PPM)"
 	result += " via "
 	for i := 0; i < len(r.Hops); i++ {
 		alias := r.Hops[i].Alias
 		feePPM := r.Hops[i].FeePPM
-		result += "- " + alias + " (" + strconv.FormatUint(feePPM, 10) + "ppm) "
+		result += "- " + alias + " (" + strconv.FormatUint(feePPM, 10) + "PPM) "
 	}
-	result += "costing " + strconv.FormatUint(r.Fee, 10) + "msat"
 	return result
 }
