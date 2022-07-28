@@ -65,7 +65,7 @@ func (r *Rebalance) Run() (*Result, error) {
 				strconv.Itoa(r.MaxHops) + " hops. " + lastError
 			break
 		}
-		r.Node.Logln(glightning.Debug, "===================== ATTEMPT", i, "=====================")
+		r.Node.Logln(glightning.Debug, "===================== ATTEMPT ", i, " =====================")
 
 		result, err := r.runAttempt(maxHops)
 
@@ -78,7 +78,7 @@ func (r *Rebalance) Run() (*Result, error) {
 
 		// no route found with at most maxHops
 		if err == util.ErrNoRoute {
-			r.Node.Logln(glightning.Debug, "no route found with at most", maxHops, "hops, increasing max hops to ", maxHops+1)
+			r.Node.Logln(glightning.Debug, "no route found with at most ", maxHops, " hops, increasing max hops to ", maxHops+1)
 			lastError = err.Error()
 			maxHops += 1
 			continue

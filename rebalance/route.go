@@ -15,7 +15,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	src := r.OutChannel.Destination
 	dst := r.InChannel.Source
 
-	r.Node.Logln(glightning.Debug, "looking for a route from", src, "to", dst)
+	r.Node.Logln(glightning.Debug, "looking for a route from ", src, " to ", dst)
 	route, err := r.Node.Graph.GetRoute(src, dst, r.Amount, exclude, maxHops)
 	if err != nil {
 		return nil, err

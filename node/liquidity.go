@@ -23,7 +23,7 @@ func (n *Node) UpdateLiquidity() {
 		oppositeChannelId := update.ShortChannelID + "/" + oppositeDirection
 
 		n.Logln(glightning.Debug, "failed from "+n.Graph.Channels[channelId].Source+" to "+n.Graph.Channels[channelId].Destination)
-		n.Logf(glightning.Debug, "channel %s failed, opposite channel is %s\n", channelId, oppositeChannelId)
+		n.Logf(glightning.Debug, "channel %s failed, opposite channel is %s", channelId, oppositeChannelId)
 
 		if _, ok := n.Graph.Channels[channelId]; ok {
 			n.Graph.Channels[channelId].Liquidity = update.Amount

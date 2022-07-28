@@ -86,7 +86,7 @@ func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 		n.Logln(glightning.Unusual, err)
 	}
 
-	n.Logf(glightning.Debug, "code: %d, failcode: %d, failcodename: %s\n", sf.Code, sf.Data.FailCode, sf.Data.FailCodeName)
+	n.Logf(glightning.Debug, "code: %d, failcode: %d, failcodename: %s", sf.Code, sf.Data.FailCode, sf.Data.FailCodeName)
 
 	// TODO: handle failure codes separately: right now we treat every failure as a liquidity failure, but it might not be the case
 	n.LiquidityUpdateChan <- &LiquidityUpdate{
