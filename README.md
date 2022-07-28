@@ -22,12 +22,12 @@ The executable that you have just built is called `circular`.
 ## Usage
 There are two options for running a circular rebalance at the moment:
 
-via scid:
+via Short Channel ID:
 ```bash
 lightning-cli circular -k inscid=123456x1x1 outscid=345678x1x1 amount=200000 maxppm=10 attempts=1
 ```
 
-via nodeID:
+via Node ID:
 ```bash
 lightning-cli circular-node -k outnode=123abc innode=345def amount=200000 maxppm=10 attempts=1
 ```
@@ -47,9 +47,7 @@ The following is a list of features that will be added in the future:
 * Allow the user to omit the `outscid` or `outnode` parameter and let the plugin find the best alternative
 * Liquidity aging policy: right now if there is a failure on a channel, the liquidity belief doesn't move until that channel is used again. This information might change over time, and we want to keep that into account.
 * Concurrent rebalancing attempts
-* Store information about successes and failures in the database for statistics
 * More granularity in error management
-* Better logging
 * More testing
 
 ## Contributing
