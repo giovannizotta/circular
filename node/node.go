@@ -81,9 +81,16 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	}
 
 	n.Logln(glightning.Debug, "refreshing graph")
-	n.refreshGraph()
+	err = n.refreshGraph()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	n.Logln(glightning.Debug, "refreshing peers")
-	n.refreshPeers()
+	err = n.refreshPeers()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	n.Logln(glightning.Debug, "opening database")
 	n.DB = NewDB(config.LightningDir + "/" + CIRCULAR_DIR)

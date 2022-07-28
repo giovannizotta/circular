@@ -37,11 +37,12 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 	}
 }
 
-func (n *Node) refreshGraph() {
+func (n *Node) refreshGraph() error {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph")
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
 		n.Logf(glightning.Unusual, "error listing channels: %v\n", err)
+		return err
 	}
 
 	n.Logln(glightning.Debug, "refreshing channels")
@@ -54,21 +55,25 @@ func (n *Node) refreshGraph() {
 	nodes, err := n.lightning.ListNodes()
 	if err != nil {
 		n.Logf(glightning.Unusual, "error listing nodes: %v\n", err)
+		return err
 	}
 	n.Graph.RefreshAliases(nodes)
 
 	n.Logln(glightning.Debug, "saving graph to file")
 	n.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
+	return nil
 }
 
-func (n *Node) refreshPeers() {
+func (n *Node) refreshPeers() error {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers")
 	n.Logln(glightning.Debug, "refreshing peers")
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
-		log.Fatalln(err)
+		n.Logln(glightning.Unusual, err)
+		return err
 	}
 	for _, peer := range peers {
 		n.Peers[peer.Id] = peer
 	}
+	return nil
 }
