@@ -60,7 +60,10 @@ func (n *Node) refreshGraph() error {
 	n.Graph.RefreshAliases(nodes)
 
 	n.Logln(glightning.Debug, "saving graph to file")
-	n.Graph.SaveToFile(CIRCULAR_DIR, "graph.json")
+	err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

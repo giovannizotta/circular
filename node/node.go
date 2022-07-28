@@ -65,16 +65,12 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.Id = info.Id
 
 	n.Logln(glightning.Debug, "loading from file")
-	g, err := graph.LoadFromFile(config.LightningDir + "/" + CIRCULAR_DIR + "/" + graph.FILE)
-	if err == nil {
-		// If we have a graph, we're good to go
-		n.Logln(glightning.Debug, "loaded graph from file")
-		n.Graph = g
-	} else if err == util.ErrNoGraphToLoad {
+	err = n.LoadGraphFromFile(config.LightningDir+"/"+CIRCULAR_DIR, graph.FILE)
+	if err == util.ErrNoGraphToLoad {
 		// If we don't have a graph, we need to create one
 		n.Logln(glightning.Unusual, err)
 		n.Graph = graph.NewGraph()
-	} else {
+	} else if err != nil {
 		// If we have an error, we're in trouble
 		n.Logln(glightning.Unusual, err)
 		log.Fatalln(err)
