@@ -135,24 +135,11 @@ func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 	result := NewResult("success", r.Amount/1000,
 		r.OutChannel.Destination, r.InChannel.Source)
 
-	// get aliases, if any
-	var srcAlias, dstAlias string
-	if _, ok := r.Node.Graph.Aliases[r.OutChannel.Destination]; ok {
-		srcAlias = r.Node.Graph.Aliases[r.OutChannel.Destination]
-	} else {
-		srcAlias = r.OutChannel.Destination
-	}
-	if _, ok := r.Node.Graph.Aliases[r.InChannel.Source]; ok {
-		dstAlias = r.Node.Graph.Aliases[r.InChannel.Source]
-	} else {
-		dstAlias = r.InChannel.Source
-	}
-
 	result.Fee = route.Fee()
 	result.PPM = route.FeePPM()
 	result.Route = graph.NewPrettyRoute(route)
 	result.Message = fmt.Sprintf("successfully rebalanced %d sats from %s to %s at %d ppm. Total fees paid: %.3f sats",
-		result.Amount, srcAlias, dstAlias,
+		result.Amount, r.Node.Graph.GetAlias(r.OutChannel.Destination), r.Node.Graph.GetAlias(r.InChannel.Source),
 		result.PPM, float64(result.Fee)/1000)
 
 	return result, nil

@@ -148,3 +148,10 @@ func remove(s []string, i int) []string {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
 }
+
+func (g *Graph) GetAlias(id string) string {
+	if alias, ok := g.Aliases[id]; ok {
+		return alias
+	}
+	return id
+}

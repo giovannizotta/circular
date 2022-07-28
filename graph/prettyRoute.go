@@ -28,14 +28,6 @@ type PrettyRoute struct {
 
 func NewPrettyRoute(route *Route) *PrettyRoute {
 	hops := make([]PrettyRouteHop, len(route.Hops))
-	sourceAlias := route.Source
-	if alias, ok := route.Graph.Aliases[sourceAlias]; ok {
-		sourceAlias = alias
-	}
-	destinationAlias := route.Destination
-	if alias, ok := route.Graph.Aliases[destinationAlias]; ok {
-		destinationAlias = alias
-	}
 
 	// now hops
 	from := route.Hops[0].Source
@@ -48,10 +40,7 @@ func NewPrettyRoute(route *Route) *PrettyRoute {
 		FeePPM:         0,
 	}
 
-	if alias, ok := route.Graph.Aliases[from]; ok {
-		from = alias
-	}
-	hops[0].Alias = from
+	hops[0].Alias = route.Graph.GetAlias(from)
 
 	for i := 1; i < len(route.Hops); i++ {
 		fee := route.Hops[i-1].MilliSatoshi - route.Hops[i].MilliSatoshi
@@ -65,18 +54,14 @@ func NewPrettyRoute(route *Route) *PrettyRoute {
 			Fee:            fee,
 			FeePPM:         feePPM,
 		}
-
-		if alias, ok := route.Graph.Aliases[from]; ok {
-			from = alias
-		}
-		hops[i].Alias = from
+		hops[i].Alias = route.Graph.GetAlias(from)
 	}
 
 	return &PrettyRoute{
 		SourceId:         route.Source,
 		DestinationId:    route.Destination,
-		SourceAlias:      sourceAlias,
-		DestinationAlias: destinationAlias,
+		SourceAlias:      route.Graph.GetAlias(route.Source),
+		DestinationAlias: route.Graph.GetAlias(route.Destination),
 		Amount:           route.Amount / 1000,
 		Fee:              route.Fee(),
 		FeePPM:           route.FeePPM(),
