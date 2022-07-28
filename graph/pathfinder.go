@@ -29,16 +29,18 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 		log.Println("src:", util.ErrNoSuchNode)
 		return nil, util.ErrNoSuchNode
 	}
+
+	// initialize data structures
 	distance := make(map[string]int)
-	hop := make(map[string]RouteHop)
 	maxDistance := 1 << 31
 	for u := range g.Inbound {
 		distance[u] = maxDistance
 	}
 	distance[dst] = 0
+	hop := make(map[string]RouteHop)
 
+	// initialize priority queue, put destination in
 	pq := make(PriorityQueue, 1, 16)
-	// Insert destination
 	pq[0] = &Item{value: &PqItem{
 		Node:   dst,
 		Amount: amount,
@@ -47,26 +49,37 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	}, priority: 0}
 	heap.Init(&pq)
 
+	// main loop
 	for pq.Len() > 0 {
+		// get the node with the lowest distance from the priority queue
 		pqItem := heap.Pop(&pq).(*Item)
 		u := pqItem.value.Node
 		amount := pqItem.value.Amount
 		delay := pqItem.value.Delay
 		hops := pqItem.value.Hops
 		priority := pqItem.priority
+		// if we already visited this node with a lower distance, ignore it
 		if priority > distance[u] {
 			continue
 		}
+
+		// if we reached the source, we are done
 		if u == src {
 			break
 		}
+
+		// if we reached the maximum number of hops, discard this node
 		if hops >= maxHops {
 			continue
 		}
+
+		// check all the neighbors of the current node
 		for v, edge := range g.Inbound[u] {
 			if exclude[v] {
 				continue
 			}
+
+			// for each channel in the edge between two nodes (there may be multiple channels between two nodes)
 			for _, scid := range edge {
 				channelId := scid + "/" + util.GetDirection(v, u)
 				if _, ok := g.Channels[channelId]; !ok {
@@ -74,13 +87,21 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 					continue
 				}
 				channel := g.Channels[channelId]
+
+				// check if the channel is usable
 				if !channel.CanForward(amount) {
 					continue
 				}
+
+				// compute fees and update the priority queue if we found a better way to reach v
 				channelFee := channel.ComputeFee(amount)
 				newDistance := distance[u] + int(channelFee)
 				if newDistance < distance[v] {
+
+					// now v is reachable from u with a lower distance
 					distance[v] = newDistance
+
+					// add v to the priority queue while computing fees, delay and hops
 					hop[v] = RouteHop{
 						channel,
 						amount + channelFee,
@@ -96,10 +117,11 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 			}
 		}
 	}
+	// if we did not reach the source, we did not find a route
 	if distance[src] == maxDistance {
-		log.Println(util.ErrNoRoute)
 		return nil, util.ErrNoRoute
 	}
+	
 	// now we have the hop map, we can build the hops
 	hops := make([]RouteHop, 0, 10)
 	for u := src; u != dst; u = hop[u].Destination {
