@@ -37,4 +37,5 @@ var (
 	ErrAmountLessThanSplitAmount      = errors.New("amount is less than split amount")
 	ErrAmountNotMultipleOfSplitAmount = errors.New("amount is not a multiple of split amount")
 	ErrDepleteUpToPercentInvalid      = errors.New("deplete up to percent invalid, it must be between 0 and 1")
+	ErrNoChannel                      = errors.New("no channel")
 )
