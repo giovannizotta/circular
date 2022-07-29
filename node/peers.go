@@ -51,3 +51,39 @@ func (n *Node) GetGraphChannelFromPeerChannel(channel *glightning.PeerChannel, d
 	}
 	return n.Graph.Channels[channelId], nil
 }
+
+func (n *Node) GetOutgoingChannelFromScid(scid string) (*graph.Channel, error) {
+	peer, err := n.GetChannelPeerFromScid(scid)
+	if err != nil {
+		return nil, err
+	}
+
+	channelId := scid + "/" + util.GetDirection(n.Id, peer.Id)
+	if _, ok := n.Graph.Channels[channelId]; !ok {
+		return nil, util.ErrNoOutgoingChannel
+	}
+	return n.Graph.Channels[channelId], nil
+}
+
+func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
+	peer, err := n.GetChannelPeerFromScid(scid)
+	if err != nil {
+		return nil, err
+	}
+
+	channelId := scid + "/" + util.GetDirection(peer.Id, n.Id)
+	if _, ok := n.Graph.Channels[channelId]; !ok {
+		return nil, util.ErrNoIncomingChannel
+	}
+	return n.Graph.Channels[channelId], nil
+}
+
+func (n *Node) UpdateChannelBalance(outPeer, scid string, amount uint64) {
+	for _, channel := range n.Peers[outPeer].Channels {
+		if channel.ShortChannelId == scid {
+			channel.SpendableMilliSatoshi -= amount * 1000
+			channel.ReceivableMilliSatoshi += amount * 1000
+			return
+		}
+	}
+}

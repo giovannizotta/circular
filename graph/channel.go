@@ -31,6 +31,10 @@ func (c *Channel) ComputeFee(amount uint64) uint64 {
 	return result
 }
 
+func (c *Channel) ComputeFeePPM(amount uint64) uint64 {
+	return c.ComputeFee(amount) * 1000000 / amount
+}
+
 func (c *Channel) GetHop(amount uint64, delay uint) glightning.RouteHop {
 	return glightning.RouteHop{
 		Id:             c.Destination,
