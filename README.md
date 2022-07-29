@@ -5,8 +5,15 @@
 It optimizes on **fees**, and it's designed to be used by routing nodes who do not need reliability in their payments and just want to rebalance their channels at the cheapest possible rate.
 It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments. Initially it doesn't know anything about the graph, but it will learn about it as it fails payments.
 
+## Features
+* Rebalance by Short Channel Id or by Node Id
+* Rebalance a channel from multiple sources in parallel
+* No invoices
+* Liquidity information is stored in `graph.json`
+* Success and failure data is stored in the database
+
 ## Building
-You need Go 1.13 or higher to build this plugin.
+You need Go 1.18 or higher to build this plugin.
 
 ```bash
 git clone https://github.com/giovannizotta/circular.git
