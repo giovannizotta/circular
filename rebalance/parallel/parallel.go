@@ -110,7 +110,7 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 		r.Node.Logln(glightning.Debug, "Waiting for result, InFlightAmount:", r.InFlightAmount)
 		rebalanceResult := <-r.RebalanceResultChan
 
-		if rebalanceResult.Status == "status" {
+		if rebalanceResult.Status == "success" {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
 			result.AddSuccess(rebalanceResult, r.Node.Graph.Aliases)
 			// if we had a success, we put the candidate back in front of the queue

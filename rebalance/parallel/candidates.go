@@ -42,7 +42,7 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 
 func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error {
 	// check that the channel is not under the deplete threshold
-	depleteAmount := util.Max(r.DepleteUpToAmount,
+	depleteAmount := util.Min(r.DepleteUpToAmount,
 		uint64(float64(channel.MilliSatoshiTotal)*r.DepleteUpToPercent))
 	r.Node.Logln(glightning.Debug, "depleteAmount:", depleteAmount)
 	if channel.SpendableMilliSatoshi < depleteAmount {
