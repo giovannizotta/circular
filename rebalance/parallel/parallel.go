@@ -5,6 +5,7 @@ import (
 	"circular/node"
 	rebalance2 "circular/rebalance"
 	"circular/util"
+	"fmt"
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 	"github.com/gammazero/deque"
@@ -103,6 +104,7 @@ func (r *RebalanceParallel) FireCandidates() {
 
 func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 	start := time.Now()
+	result := NewResult(r.Amount)
 
 	for r.InFlightAmount > 0 {
 		r.Node.Logln(glightning.Debug, "Waiting for result, InFlightAmount:", r.InFlightAmount)
@@ -110,6 +112,9 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 
 		if rebalanceResult.Status == "status" {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
+			result.AddSuccess(rebalanceResult, r.Node.Graph.Aliases)
+			// if we had a success, we put the candidate back in front of the queue
+			r.EnqueueCandidate(rebalanceResult)
 		} else {
 			r.Node.Logf(glightning.Debug, "Failed rebalance: %+v", rebalanceResult)
 		}
@@ -117,17 +122,12 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 		// update inflight and rebalanced amount
 		r.UpdateAmounts(rebalanceResult)
 
-		// if we had a success, we put the candidate back in front of the queue
-		if rebalanceResult.Status == "success" {
-			r.EnqueueCandidate(rebalanceResult)
-		}
-
 		// now that we had a result, we can fire more candidates
 		r.FireCandidates()
 	}
-	elapsed := time.Since(start)
-	r.Node.Logf(glightning.Info, "Finished in %s", elapsed)
-	return NewResult(r), nil
+	result.Attempts = r.TotalAttempts
+	result.Time = fmt.Sprintf("%.3fs", float64(time.Since(start).Milliseconds())/1000)
+	return result, nil
 }
 
 func (r *RebalanceParallel) Fire(candidate *graph.Channel) {
