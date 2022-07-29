@@ -6,31 +6,32 @@ import (
 )
 
 const (
-	SPLITS                = 2
-	SPLIT_AMOUNT          = 100000
-	MAX_OUT_PPM           = 10
-	DEPLETE_UP_TO_PERCENT = 0.5
-	DEPLETE_UP_TO_AMOUNT  = 2000000
+	DEFAULT_AMOUNT                = 400000
+	DEFAULT_SPLITS                = 4
+	DEFAULT_SPLIT_AMOUNT          = 100000
+	DEFAULT_MAX_OUT_PPM           = 50
+	DEFAULT_DEPLETE_UP_TO_PERCENT = 0.2
+	DEFAULT_DEPLETE_UP_TO_AMOUNT  = 1000000
 )
 
 func (r *RebalanceParallel) setDefaults() {
+	if r.Amount == 0 {
+		r.Amount = DEFAULT_AMOUNT
+	}
 	if r.Splits <= 0 {
-		r.Splits = SPLITS
+		r.Splits = DEFAULT_SPLITS
 	}
 	if r.SplitAmount == 0 {
-		r.SplitAmount = SPLIT_AMOUNT
-	}
-	if r.Amount == 0 {
-		r.Amount = SPLITS * SPLIT_AMOUNT
+		r.SplitAmount = DEFAULT_SPLIT_AMOUNT
 	}
 	if r.DepleteUpToPercent <= 0 {
-		r.DepleteUpToPercent = DEPLETE_UP_TO_PERCENT
+		r.DepleteUpToPercent = DEFAULT_DEPLETE_UP_TO_PERCENT
 	}
 	if r.DepleteUpToAmount == 0 {
-		r.DepleteUpToAmount = DEPLETE_UP_TO_AMOUNT
+		r.DepleteUpToAmount = DEFAULT_DEPLETE_UP_TO_AMOUNT
 	}
 	if r.MaxOutPPM == 0 {
-		r.MaxOutPPM = MAX_OUT_PPM
+		r.MaxOutPPM = DEFAULT_MAX_OUT_PPM
 	}
 	if r.MaxPPM == 0 {
 		r.MaxPPM = rebalance.DEFAULT_MAXPPM
