@@ -2,6 +2,7 @@ package main
 
 import (
 	"circular/rebalance"
+	"circular/rebalance/parallel"
 	"github.com/elementsproject/glightning/glightning"
 )
 
@@ -15,5 +16,10 @@ func registerMethods(p *glightning.Plugin) {
 	rpcRebalanceByScid.LongDesc = "Rebalance the channel `inchannel` from the channel `outchannel` for amount `amount` for at most `maxppm`"
 	rpcRebalanceByScid.Category = "utility"
 	p.RegisterMethod(rpcRebalanceByScid)
+
+	rpcRebalanceParallel := glightning.NewRpcMethod(&parallel.RebalanceParallel{}, "Rebalance in parallel")
+	rpcRebalanceParallel.LongDesc = "Rebalance the channel `inchannel` from many channels concurrently"
+	rpcRebalanceParallel.Category = "utility"
+	p.RegisterMethod(rpcRebalanceParallel)
 
 }

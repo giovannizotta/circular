@@ -30,26 +30,15 @@ func (r *RebalanceByScid) Call() (jrpc2.Result, error) {
 		return nil, util.ErrNoRequiredParameter
 	}
 
-	outPeer, err := r.Node.GetChannelPeerFromScid(r.OutScid)
-	if err != nil {
-		return nil, err
-	}
-	inPeer, err := r.Node.GetChannelPeerFromScid(r.InScid)
+	outgoingChannel, err := r.Node.GetOutgoingChannelFromScid(r.OutScid)
 	if err != nil {
 		return nil, err
 	}
 
-	outgoingChannelId := r.OutScid + "/" + util.GetDirection(r.Node.Id, outPeer.Id)
-	if _, ok := r.Node.Graph.Channels[outgoingChannelId]; !ok {
-		return nil, util.ErrNoOutgoingChannel
+	incomingChannel, err := r.Node.GetIncomingChannelFromScid(r.InScid)
+	if err != nil {
+		return nil, err
 	}
-	outgoingChannel := r.Node.Graph.Channels[outgoingChannelId]
-
-	incomingChannelId := r.InScid + "/" + util.GetDirection(inPeer.Id, r.Node.Id)
-	if _, ok := r.Node.Graph.Channels[incomingChannelId]; !ok {
-		return nil, util.ErrNoIncomingChannel
-	}
-	incomingChannel := r.Node.Graph.Channels[incomingChannelId]
 
 	rebalance := NewRebalance(outgoingChannel, incomingChannel, r.Amount, r.MaxPPM, r.Attempts, r.MaxHops)
 

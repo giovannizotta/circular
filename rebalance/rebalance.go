@@ -10,14 +10,6 @@ import (
 	"strconv"
 )
 
-const (
-	NORMAL           = "CHANNELD_NORMAL"
-	DEFAULT_AMOUNT   = 200000000
-	DEFAULT_MAXPPM   = 10
-	DEFAULT_ATTEMPTS = 1
-	DEFAULT_MAXHOPS  = 8
-)
-
 type Rebalance struct {
 	OutChannel *graph.Channel
 	InChannel  *graph.Channel
@@ -41,7 +33,7 @@ func NewRebalance(outChannel, inChannel *graph.Channel, amount, maxppm uint64, a
 }
 
 func (r *Rebalance) Setup() error {
-	err := r.setDefaultParameters()
+	err := r.setDefaults()
 	if err != nil {
 		return err
 	}
@@ -118,6 +110,7 @@ func (r *Rebalance) Run() (*Result, error) {
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
 	r.Node.Logln(glightning.Debug, "refreshing in and out channels")
+	// TODO: this refreshes fees, but not spendable and receivable amounts
 	r.Node.RefreshChannel(r.OutChannel)
 	r.Node.RefreshChannel(r.InChannel)
 
