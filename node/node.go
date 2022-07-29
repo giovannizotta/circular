@@ -25,6 +25,8 @@ type Node struct {
 	lightning           *glightning.Lightning
 	plugin              *glightning.Plugin
 	initLock            *sync.Cond
+	graphLock           *sync.Cond
+	peersLock           *sync.Cond
 	Id                  string
 	Peers               map[string]*glightning.Peer
 	Graph               *graph.Graph
@@ -37,6 +39,8 @@ func GetNode() *Node {
 		rand.Seed(time.Now().UnixNano())
 		singleton = &Node{
 			initLock:            sync.NewCond(&sync.Mutex{}),
+			graphLock:           sync.NewCond(&sync.Mutex{}),
+			peersLock:           sync.NewCond(&sync.Mutex{}),
 			Peers:               make(map[string]*glightning.Peer),
 			LiquidityUpdateChan: make(chan *LiquidityUpdate, 16),
 		}
@@ -135,5 +139,7 @@ func (n *Node) RefreshChannel(channel *graph.Channel) {
 		n.Logln(glightning.Unusual, err)
 		return
 	}
+	n.graphLock.L.Lock()
 	n.Graph.RefreshChannels(channels)
+	n.graphLock.L.Unlock()
 }

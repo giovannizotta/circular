@@ -15,14 +15,10 @@ const (
 func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
-		n.initLock.L.Lock()
 		n.refreshGraph()
-		n.initLock.L.Unlock()
 	})
 	addCronJob(c, options["peer_refresh"].GetValue().(string), func() {
-		n.initLock.L.Lock()
 		n.refreshPeers()
-		n.initLock.L.Unlock()
 	})
 	addCronJob(c, STATS_REFRESH_INTERVAL, func() {
 		n.PrintStats()
@@ -39,6 +35,9 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 
 func (n *Node) refreshGraph() error {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph", n.Logf)
+	n.graphLock.L.Lock()
+	defer n.graphLock.L.Unlock()
+
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
 		n.Logf(glightning.Unusual, "error listing channels: %v\n", err)
@@ -70,6 +69,9 @@ func (n *Node) refreshGraph() error {
 
 func (n *Node) refreshPeers() error {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers", n.Logf)
+	n.peersLock.L.Lock()
+	defer n.peersLock.L.Unlock()
+	
 	n.Logln(glightning.Debug, "refreshing peers")
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
