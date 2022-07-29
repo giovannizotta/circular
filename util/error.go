@@ -41,4 +41,6 @@ var (
 	ErrNoCandidates                   = errors.New("no candidates")
 	ErrChannelNotInNormalState        = errors.New("channel is not in normal state")
 	ErrChannelDepleted                = errors.New("channel is depleted")
+	ErrChannelNotFound                = errors.New("channel not found")
+	ErrOppositeChannelNotFound        = errors.New("opposite channel not found")
 )

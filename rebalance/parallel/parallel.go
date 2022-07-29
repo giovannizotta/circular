@@ -77,11 +77,12 @@ func (r *RebalanceParallel) Call() (jrpc2.Result, error) {
 }
 
 func (r *RebalanceParallel) FireCandidates() {
-	r.Node.Logln(glightning.Debug, "Firing candidates")
 	r.AmountLock.L.Lock()
 	carryOn := r.AmountRebalanced+r.InFlightAmount < r.Amount
 	splitsInFlight := int(r.InFlightAmount / r.SplitAmount)
 	r.AmountLock.L.Unlock()
+
+	r.Node.Logln(glightning.Debug, "Firing candidates")
 
 	r.Node.Logln(glightning.Debug, "AmountRebalanced: ", r.AmountRebalanced, ", InFlightAmount: ", r.InFlightAmount, ", Total Amount:", r.Amount)
 	r.Node.Logln(glightning.Debug, "Carry on: ", carryOn, ", Splits in flight: ", splitsInFlight)
@@ -98,6 +99,7 @@ func (r *RebalanceParallel) FireCandidates() {
 		carryOn = r.AmountRebalanced+r.InFlightAmount < r.Amount
 		splitsInFlight = int(r.InFlightAmount / r.SplitAmount)
 		r.AmountLock.L.Unlock()
+
 		r.Node.Logln(glightning.Debug, "Carry on: ", carryOn, ", Splits in flight: ", splitsInFlight)
 	}
 }
@@ -132,10 +134,10 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 
 func (r *RebalanceParallel) Fire(candidate *graph.Channel) {
 	r.Node.Logln(glightning.Debug, "Firing candidate:", candidate.ShortChannelId)
-	r.TotalAttempts++
 	rebalance := rebalance2.NewRebalance(candidate, r.InChannel, r.SplitAmount, r.MaxPPM, r.Attempts, r.MaxHops)
 
 	r.AmountLock.L.Lock()
+	r.TotalAttempts++
 	r.InFlightAmount += rebalance.Amount
 	r.AmountLock.L.Unlock()
 

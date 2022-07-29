@@ -31,22 +31,14 @@ func (r *RebalanceByNode) getBestOutgoingChannel() (*graph.Channel, error) {
 	bestScid := r.Node.GetBestPeerChannel(r.OutNode, func(channel *glightning.PeerChannel) uint64 {
 		return channel.SpendableMilliSatoshi
 	}).ShortChannelId
-	channelId := bestScid + "/" + util.GetDirection(r.Node.Id, r.OutNode)
-	if channelId, ok := r.Node.Graph.Channels[channelId]; ok {
-		return channelId, nil
-	}
-	return nil, util.ErrNoOutgoingChannel
+	return r.Node.GetOutgoingChannelFromScid(bestScid)
 }
 
 func (r *RebalanceByNode) getBestIncomingChannel() (*graph.Channel, error) {
 	bestScid := r.Node.GetBestPeerChannel(r.InNode, func(channel *glightning.PeerChannel) uint64 {
 		return channel.ReceivableMilliSatoshi
 	}).ShortChannelId
-	channelId := bestScid + "/" + util.GetDirection(r.InNode, r.Node.Id)
-	if channelId, ok := r.Node.Graph.Channels[channelId]; ok {
-		return channelId, nil
-	}
-	return nil, util.ErrNoIncomingChannel
+	return r.Node.GetIncomingChannelFromScid(bestScid)
 }
 
 func (r *RebalanceByNode) Call() (jrpc2.Result, error) {

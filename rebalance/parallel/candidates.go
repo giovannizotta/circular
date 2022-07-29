@@ -13,6 +13,9 @@ import (
  * @returns a list of candidates, or an error if none was found
  */
 func (r *RebalanceParallel) FindCandidates(inPeer string) error {
+	r.Node.PeersLock.RLock()
+	defer r.Node.PeersLock.RUnlock()
+
 	r.Candidates = deque.New[*graph.Channel]()
 	for _, peer := range r.Node.Peers {
 		if peer.Id == inPeer {

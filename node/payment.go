@@ -18,6 +18,7 @@ const (
 
 func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.SendPayFields, error) {
 	defer util.TimeTrack(time.Now(), "node.SendPay", n.Logf)
+
 	n.Logln(glightning.Debug, "sending payment")
 	_, err := n.lightning.SendPayLite(route.ToLightningRoute(), paymentHash)
 	if err != nil {
@@ -27,8 +28,10 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 
 	n.Logln(glightning.Debug, "waiting for payment to be confirmed")
 	result, err := n.lightning.WaitSendPay(paymentHash, SENDPAY_TIMEOUT)
+
 	if err != nil {
 		if err.Error() == util.ErrSendPayTimeout.Error() {
+
 			// delete the preimage from the DB. In this way the payment will fail when the HTLC comes in
 			n.Logln(glightning.Debug, "payment timed out, deleting preimage from database")
 			err = n.DB.Delete(paymentHash)
@@ -42,17 +45,21 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 			if err != nil {
 				n.Logln(glightning.Unusual, err)
 			}
+
 			return nil, util.ErrSendPayTimeout
 		}
+
 		n.Logln(glightning.Debug, err)
 		return nil, err
 	}
+
 	return result, nil
 }
 
 func (n *Node) deleteIfOurs(paymentHash string) error {
 	key := paymentHash
 	_, err := n.DB.Get(key)
+
 	// check if this payment was made by us
 	if err == badger.ErrKeyNotFound {
 		// check if the payment timed out
@@ -68,6 +75,7 @@ func (n *Node) deleteIfOurs(paymentHash string) error {
 		n.Logln(glightning.Unusual, err)
 		return err
 	}
+
 	return nil
 }
 
@@ -81,6 +89,7 @@ func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
 	}
+
 	err = n.DB.Set(FAILURE_PREFIX+sf.Data.PaymentHash, bytes)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
@@ -107,6 +116,7 @@ func (n *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
 	}
+
 	err = n.DB.Set(SUCCESS_PREFIX+ss.PaymentHash, bytes)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)

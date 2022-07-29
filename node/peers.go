@@ -7,6 +7,9 @@ import (
 )
 
 func (n *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel) uint64) *glightning.PeerChannel {
+	n.PeersLock.RLock()
+	defer n.PeersLock.RUnlock()
+
 	channels := n.Peers[id].Channels
 	best := channels[0]
 	for _, channel := range channels {
@@ -18,6 +21,9 @@ func (n *Node) GetBestPeerChannel(id string, metric func(*glightning.PeerChannel
 }
 
 func (n *Node) GetPeerChannelFromGraphChannel(graphChannel *graph.Channel) (*glightning.PeerChannel, error) {
+	n.PeersLock.RLock()
+	defer n.PeersLock.RUnlock()
+
 	for _, peer := range n.Peers {
 		for _, channel := range peer.Channels {
 			if channel.ShortChannelId == graphChannel.ShortChannelId {
@@ -29,11 +35,17 @@ func (n *Node) GetPeerChannelFromGraphChannel(graphChannel *graph.Channel) (*gli
 }
 
 func (n *Node) HasPeer(id string) bool {
+	n.PeersLock.RLock()
+	defer n.PeersLock.RUnlock()
+
 	_, ok := n.Peers[id]
 	return ok
 }
 
 func (n *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
+	n.PeersLock.RLock()
+	defer n.PeersLock.RUnlock()
+
 	for _, peer := range n.Peers {
 		for _, channel := range peer.Channels {
 			if channel.ShortChannelId == scid {
@@ -46,10 +58,7 @@ func (n *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
 
 func (n *Node) GetGraphChannelFromPeerChannel(channel *glightning.PeerChannel, direction string) (*graph.Channel, error) {
 	channelId := channel.ShortChannelId + "/" + direction
-	if _, ok := n.Graph.Channels[channelId]; !ok {
-		return nil, util.ErrNoChannel
-	}
-	return n.Graph.Channels[channelId], nil
+	return n.Graph.GetChannel(channelId)
 }
 
 func (n *Node) GetOutgoingChannelFromScid(scid string) (*graph.Channel, error) {
@@ -59,10 +68,7 @@ func (n *Node) GetOutgoingChannelFromScid(scid string) (*graph.Channel, error) {
 	}
 
 	channelId := scid + "/" + util.GetDirection(n.Id, peer.Id)
-	if _, ok := n.Graph.Channels[channelId]; !ok {
-		return nil, util.ErrNoOutgoingChannel
-	}
-	return n.Graph.Channels[channelId], nil
+	return n.Graph.GetChannel(channelId)
 }
 
 func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
@@ -72,13 +78,13 @@ func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
 	}
 
 	channelId := scid + "/" + util.GetDirection(peer.Id, n.Id)
-	if _, ok := n.Graph.Channels[channelId]; !ok {
-		return nil, util.ErrNoIncomingChannel
-	}
-	return n.Graph.Channels[channelId], nil
+	return n.Graph.GetChannel(channelId)
 }
 
 func (n *Node) UpdateChannelBalance(outPeer, scid string, amount uint64) {
+	n.PeersLock.Lock()
+	defer n.PeersLock.Unlock()
+
 	for _, channel := range n.Peers[outPeer].Channels {
 		if channel.ShortChannelId == scid {
 			channel.SpendableMilliSatoshi -= amount * 1000

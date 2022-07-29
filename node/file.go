@@ -35,7 +35,9 @@ func (n *Node) LoadGraphFromFile(dir, filename string) error {
 	for _, c := range g.Channels {
 		g.AddChannel(c)
 	}
+	
 	n.Graph = g
+
 	n.Logln(glightning.Info, "graph loaded successfully")
 	return nil
 }
@@ -61,11 +63,13 @@ func (n *Node) SaveGraphToFile(dir, filename string) error {
 	defer file.Close()
 
 	// write json
+	n.Graph.Lock()
 	err = json.NewEncoder(file).Encode(n.Graph)
 	if err != nil {
 		n.Logf(glightning.Unusual, "error writing file: %v", err)
 		return err
 	}
+	n.Graph.Unlock()
 
 	// save old file
 	// check if filename exists

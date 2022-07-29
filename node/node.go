@@ -24,9 +24,8 @@ var (
 type Node struct {
 	lightning           *glightning.Lightning
 	plugin              *glightning.Plugin
-	initLock            *sync.Cond
-	graphLock           *sync.Cond
-	peersLock           *sync.Cond
+	initLock            *sync.Mutex
+	PeersLock           *sync.RWMutex
 	Id                  string
 	Peers               map[string]*glightning.Peer
 	Graph               *graph.Graph
@@ -38,27 +37,27 @@ func GetNode() *Node {
 	once.Do(func() {
 		rand.Seed(time.Now().UnixNano())
 		singleton = &Node{
-			initLock:            sync.NewCond(&sync.Mutex{}),
-			graphLock:           sync.NewCond(&sync.Mutex{}),
-			peersLock:           sync.NewCond(&sync.Mutex{}),
+			initLock:            &sync.Mutex{},
+			PeersLock:           &sync.RWMutex{},
 			Peers:               make(map[string]*glightning.Peer),
 			LiquidityUpdateChan: make(chan *LiquidityUpdate, 16),
 		}
 		go singleton.UpdateLiquidity()
 	})
 	// This makes sure the node is not used until it is initialized or refreshed
-	singleton.initLock.L.Lock()
+	singleton.initLock.Lock()
 	// unlock it right away.
-	singleton.initLock.L.Unlock()
+	singleton.initLock.Unlock()
 	return singleton
 }
 
 func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
 	defer util.TimeTrack(time.Now(), "node.Init", n.Logf)
+	n.initLock.Lock()
+	defer n.initLock.Unlock()
+
 	n.lightning = lightning
 	n.plugin = plugin
-	n.initLock.L.Lock()
-	defer n.initLock.L.Unlock()
 
 	n.Logln(glightning.Info, "initializing node")
 	n.Logln(glightning.Debug, "getting ID")
@@ -139,7 +138,5 @@ func (n *Node) RefreshChannel(channel *graph.Channel) {
 		n.Logln(glightning.Unusual, err)
 		return
 	}
-	n.graphLock.L.Lock()
 	n.Graph.RefreshChannels(channels)
-	n.graphLock.L.Unlock()
 }

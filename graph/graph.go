@@ -5,6 +5,7 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,17 +29,35 @@ type Edge []string
 // * an edge consists of an array of SCIDs between nodeA and nodeB
 // To access a channel via channelId (scid/direction). use: g.Channels[channelId]
 type Graph struct {
-	Channels map[string]*Channel        `json:"channels"`
-	Inbound  map[string]map[string]Edge `json:"-"`
-	Aliases  map[string]string          `json:"-"`
+	Channels          map[string]*Channel        `json:"channels"`
+	Inbound           map[string]map[string]Edge `json:"-"`
+	Aliases           map[string]string          `json:"-"`
+	adjacencyListLock *sync.RWMutex
+	channelsLock      *sync.RWMutex
+	aliasesLock       *sync.RWMutex
 }
 
 func NewGraph() *Graph {
 	return &Graph{
-		Channels: make(map[string]*Channel),
-		Inbound:  make(map[string]map[string]Edge),
-		Aliases:  make(map[string]string),
+		Channels:          make(map[string]*Channel),
+		Inbound:           make(map[string]map[string]Edge),
+		Aliases:           make(map[string]string),
+		adjacencyListLock: &sync.RWMutex{},
+		channelsLock:      &sync.RWMutex{},
+		aliasesLock:       &sync.RWMutex{},
 	}
+}
+
+func (g *Graph) Lock() {
+	g.adjacencyListLock.Lock()
+	g.channelsLock.Lock()
+	g.aliasesLock.Lock()
+}
+
+func (g *Graph) Unlock() {
+	g.adjacencyListLock.Unlock()
+	g.channelsLock.Unlock()
+	g.aliasesLock.Unlock()
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
@@ -56,6 +75,11 @@ func (g *Graph) AddChannel(c *Channel) {
 }
 
 func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
+	g.channelsLock.Lock()
+	g.adjacencyListLock.Lock()
+	defer g.adjacencyListLock.Unlock()
+	defer g.channelsLock.Unlock()
+
 	// we need to do NewChannel and not only update the liquidity because of gossip updates
 	for _, c := range channelList {
 		var channel *Channel
@@ -71,27 +95,21 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 	}
 }
 
-func (g *Graph) getLiquidityAfterAging(channelId string, perfectBalance uint64) uint64 {
-	aging := util.RandRange(AVERAGE_AGING_AMOUNT-AGING_VARIANCE, AVERAGE_AGING_AMOUNT+AGING_VARIANCE)
-	return util.Min(g.Channels[channelId].Liquidity+aging, perfectBalance)
-}
-
-func (g *Graph) updateOppositeChannel(c *Channel, liquidity uint64) {
-	oppositeChannelId := c.ShortChannelId + "/" + util.GetDirection(c.Destination, c.Source)
-	// if opposite channel is in the map
-	if _, ok := g.Channels[oppositeChannelId]; ok {
-		oppositeChannel := g.Channels[oppositeChannelId]
-		oppositeChannel.Liquidity = (c.Satoshis * 1000) - liquidity
-	}
-}
-
 func (g *Graph) RefreshAliases(nodes []*glightning.Node) {
+	g.aliasesLock.Lock()
+	defer g.aliasesLock.Unlock()
+
 	for _, n := range nodes {
 		g.Aliases[n.Id] = n.Alias
 	}
 }
 
 func (g *Graph) GetStats() string {
+	g.channelsLock.RLock()
+	g.adjacencyListLock.RLock()
+	defer g.adjacencyListLock.RUnlock()
+	defer g.channelsLock.RUnlock()
+
 	activeChannels := 0
 	atLeast200kLiquidity := 0
 	atLeast200kMaxHtlc := 0
@@ -118,6 +136,9 @@ func (g *Graph) GetStats() string {
 }
 
 func (g *Graph) PruneChannels() {
+	g.channelsLock.Lock()
+	defer g.channelsLock.Unlock()
+
 	// get current time in seconds
 	now := uint(time.Now().Unix())
 
@@ -150,8 +171,35 @@ func remove(s []string, i int) []string {
 }
 
 func (g *Graph) GetAlias(id string) string {
+	g.aliasesLock.RLock()
+	defer g.aliasesLock.RUnlock()
+
 	if alias, ok := g.Aliases[id]; ok {
 		return alias
 	}
 	return id
+}
+
+func (g *Graph) UpdateChannel(channelId, oppositeChannelId string, amount uint64) {
+	g.channelsLock.Lock()
+	defer g.channelsLock.Unlock()
+
+	if _, ok := g.Channels[channelId]; ok {
+		g.Channels[channelId].Liquidity = amount
+	}
+
+	if _, ok := g.Channels[oppositeChannelId]; ok {
+		g.Channels[oppositeChannelId].Liquidity =
+			g.Channels[oppositeChannelId].Satoshis*1000 - amount
+	}
+}
+
+func (g *Graph) GetChannel(id string) (*Channel, error) {
+	g.channelsLock.RLock()
+	defer g.channelsLock.RUnlock()
+
+	if _, ok := g.Channels[id]; !ok {
+		return nil, util.ErrNoChannel
+	}
+	return g.Channels[id], nil
 }
