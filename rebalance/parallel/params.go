@@ -41,6 +41,14 @@ func (r *RebalanceParallel) setDefaults() {
 	if r.MaxHops <= 0 {
 		r.MaxHops = rebalance.DEFAULT_MAXHOPS
 	}
+
+	r.AmountRebalanced = 0
+	r.InFlightAmount = 0
+
+	// convert to msat
+	r.DepleteUpToAmount *= 1000
+	r.Amount *= 1000
+	r.SplitAmount *= 1000
 }
 
 func (r *RebalanceParallel) validateParameters() error {

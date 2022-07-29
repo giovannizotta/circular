@@ -38,4 +38,7 @@ var (
 	ErrAmountNotMultipleOfSplitAmount = errors.New("amount is not a multiple of split amount")
 	ErrDepleteUpToPercentInvalid      = errors.New("deplete up to percent invalid, it must be between 0 and 1")
 	ErrNoChannel                      = errors.New("no channel")
+	ErrNoCandidates                   = errors.New("no candidates")
+	ErrChannelNotInNormalState        = errors.New("channel is not in normal state")
+	ErrChannelDepleted                = errors.New("channel is depleted")
 )
