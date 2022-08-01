@@ -77,7 +77,11 @@ func (n *Node) GetOutgoingChannelFromScid(scid string) (*graph.Channel, error) {
 	}
 
 	channelId := scid + "/" + util.GetDirection(n.Id, peer.Id)
-	return n.Graph.GetChannel(channelId)
+	channel, err := n.Graph.GetChannel(channelId)
+	if err == util.ErrNoChannel {
+		return nil, util.ErrNoOutgoingChannel
+	}
+	return channel, err
 }
 
 func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
@@ -87,7 +91,11 @@ func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
 	}
 
 	channelId := scid + "/" + util.GetDirection(peer.Id, n.Id)
-	return n.Graph.GetChannel(channelId)
+	channel, err := n.Graph.GetChannel(channelId)
+	if err == util.ErrNoChannel {
+		return nil, util.ErrNoIncomingChannel
+	}
+	return channel, err
 }
 
 func (n *Node) UpdateChannelBalance(outPeer, scid string, amount uint64) {
