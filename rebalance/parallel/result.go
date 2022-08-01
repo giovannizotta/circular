@@ -11,7 +11,7 @@ type Success map[uint64]uint64
 type Result struct {
 	RebalanceTarget  uint64             `json:"rebalance_target"`
 	RebalancedAmount uint64             `json:"rebalanced_amount"`
-	Attempts         int                `json:"attempts"`
+	Attempts         uint64             `json:"attempts"`
 	Time             string             `json:"time"`
 	Successes        map[string]Success `json:"successes"`
 }

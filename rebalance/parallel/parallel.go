@@ -24,7 +24,7 @@ type RebalanceParallel struct {
 	DepleteUpToAmount   uint64                       `json:"depleteuptoamount,omitempty"`
 	Attempts            int                          `json:"attempts,omitempty"`
 	MaxHops             int                          `json:"maxhops,omitempty"`
-	TotalAttempts       int                          `json:"-"`
+	TotalAttempts       uint64                       `json:"-"`
 	Node                *node.Node                   `json:"-"`
 	InChannel           *graph.Channel               `json:"-"`
 	Candidates          *deque.Deque[*graph.Channel] `json:"-"`
@@ -112,6 +112,7 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 		r.Node.Logln(glightning.Debug, "Waiting for result, InFlightAmount:", r.InFlightAmount)
 		rebalanceResult := <-r.RebalanceResultChan
 		
+		r.TotalAttempts += rebalanceResult.Attempts
 
 		if rebalanceResult.Status == "success" {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
@@ -139,7 +140,6 @@ func (r *RebalanceParallel) Fire(candidate *graph.Channel) {
 	rebalance := rebalance2.NewRebalance(candidate, r.InChannel, r.SplitAmount, r.MaxPPM, r.Attempts, r.MaxHops)
 
 	r.AmountLock.L.Lock()
-	r.TotalAttempts++
 	r.InFlightAmount += rebalance.Amount
 	r.AmountLock.L.Unlock()
 
