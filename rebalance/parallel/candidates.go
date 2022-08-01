@@ -48,7 +48,7 @@ func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error
 	depleteAmount := util.Min(r.DepleteUpToAmount,
 		uint64(float64(channel.MilliSatoshiTotal)*r.DepleteUpToPercent))
 	r.Node.Logln(glightning.Debug, "depleteAmount:", depleteAmount)
-	if channel.SpendableMilliSatoshi < depleteAmount {
+	if channel.MilliSatoshiToUs < depleteAmount {
 		return util.ErrChannelDepleted
 	}
 
