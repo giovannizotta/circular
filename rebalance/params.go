@@ -2,7 +2,7 @@ package rebalance
 
 import (
 	"circular/graph"
-	"errors"
+	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 )
 
@@ -14,6 +14,18 @@ const (
 	DEFAULT_MAXHOPS  = 8
 )
 
+func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChannel) error {
+	//validate that the channels are in normal state
+	if inChannel.State != NORMAL {
+		return util.ErrIncomingChannelNotInNormalState
+	}
+	if outChannel.State != NORMAL {
+		return util.ErrOutgoingChannelNotInNormalState
+	}
+
+	return nil
+}
+
 func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 	inChannel, err := r.Node.GetPeerChannelFromGraphChannel(in)
 	if err != nil {
@@ -23,19 +35,18 @@ func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 	if err != nil {
 		return err
 	}
-	//validate that the channels are in normal state
-	if inChannel.State != NORMAL {
-		return errors.New("incoming channel is not in normal state")
+
+	err = r.checkConnections(inChannel, outChannel)
+	if err != nil {
+		return err
 	}
-	if outChannel.State != NORMAL {
-		return errors.New("outgoing channel is not in normal state")
-	}
+
 	//validate that the amount is less than the liquidity of the channels
 	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
-		return errors.New("incoming channel has insufficient remote balance")
+		return util.ErrIncomingChannelDepleted
 	}
 	if (outChannel.MilliSatoshiToUs) < r.Amount {
-		return errors.New("outgoing channel has insufficient local balance")
+		return util.ErrOutgoingChannelDepleted
 	}
 	r.Node.Logln(glightning.Debug, "liquidity parameters validated")
 	return nil

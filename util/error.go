@@ -22,25 +22,39 @@ func (e ErrRouteTooExpensive) Error() string {
 }
 
 var (
-	ErrSelfNode                       = errors.New("one of the nodes is self")
-	ErrNoPeers                        = errors.New("no peers yet")
-	ErrNoRequiredParameter            = errors.New("missing required parameter")
-	ErrNoPeerChannel                  = errors.New("not a peer or peer channel")
-	ErrTemporaryFailure               = errors.New("TEMPORARY_FAILURE")
-	ErrSendPayTimeout                 = errors.New("200:Timed out while waiting")
-	ErrNoSuchNode                     = errors.New("no such node")
-	ErrNoRoute                        = errors.New("no route")
-	ErrNoOutgoingChannel              = errors.New("no outgoing channel")
-	ErrNoIncomingChannel              = errors.New("no incoming channel")
-	ErrNoGraphToLoad                  = errors.New("no graph to load")
-	ErrNoPeer                         = errors.New("no peer")
+	ErrTemporaryFailure = errors.New("TEMPORARY_FAILURE")
+	ErrSendPayTimeout   = errors.New("200:Timed out while waiting")
+
+	ErrNoRequiredParameter         = errors.New("missing required parameter")
+	ErrSelfNode                    = errors.New("one of the nodes is self")
+	ErrNoPeers                     = errors.New("no peers yet")
+	ErrSameIncomingAndOutgoingNode = errors.New("incoming and outgoing nodes are the same")
+	ErrNoPeerChannel               = errors.New("not a peer or peer channel")
+	ErrNoSuchNode                  = errors.New("no such node")
+	ErrNoPeer                      = errors.New("no peer")
+
+	ErrNoGraphToLoad = errors.New("no graph to load")
+	ErrNoRoute       = errors.New("no route")
+
 	ErrAmountLessThanSplitAmount      = errors.New("amount is less than split amount")
 	ErrAmountNotMultipleOfSplitAmount = errors.New("amount is not a multiple of split amount")
 	ErrDepleteUpToPercentInvalid      = errors.New("deplete up to percent invalid, it must be between 0 and 1")
-	ErrNoChannel                      = errors.New("no channel")
-	ErrNoCandidates                   = errors.New("no candidates")
-	ErrChannelNotInNormalState        = errors.New("channel is not in normal state")
-	ErrChannelDepleted                = errors.New("channel is depleted")
-	ErrChannelNotFound                = errors.New("channel not found")
-	ErrOppositeChannelNotFound        = errors.New("opposite channel not found")
+
+	ErrNoChannel               = errors.New("no channel")
+	ErrNoCandidates            = errors.New("no candidates")
+	ErrChannelDepleted         = errors.New("channel is depleted")
+	ErrIncomingChannelDepleted = errors.New("incoming channel does not have enough remote balance")
+	ErrOutgoingChannelDepleted = errors.New("outgoing channel does not have enough local balance")
+
+	ErrNoOutgoingChannel               = errors.New("no outgoing channel")
+	ErrNoIncomingChannel               = errors.New("no incoming channel")
+	ErrChannelNotInNormalState         = errors.New("channel is not in normal state")
+	ErrOutgoingChannelNotInNormalState = errors.New("outgoing channel is not in normal state")
+	ErrIncomingChannelNotInNormalState = errors.New("incoming channel is not in normal state")
+
+	ErrChannelNotFound         = errors.New("channel not found")
+	ErrOppositeChannelNotFound = errors.New("opposite channel not found")
+
+	ErrIncomingPeerDisconnected = errors.New("incoming peer is disconnected")
+	ErrOutgoingPeerDisconnected = errors.New("outgoing peer is disconnected")
 )

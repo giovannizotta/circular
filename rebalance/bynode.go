@@ -4,7 +4,6 @@ import (
 	"circular/graph"
 	"circular/node"
 	"circular/util"
-	"errors"
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/elementsproject/glightning/jrpc2"
 )
@@ -82,7 +81,7 @@ func (r *RebalanceByNode) validatePeers() error {
 	}
 	//validate that the nodes are not the same
 	if r.InNode == r.OutNode {
-		return errors.New("incoming and outgoing nodes are the same")
+		return util.ErrSameIncomingAndOutgoingNode
 	}
 
 	//validate that the nodes are actually peers
