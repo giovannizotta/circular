@@ -15,6 +15,8 @@ const (
 )
 
 func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChannel) error {
+	r.Node.PeersLock.RLock()
+	defer r.Node.PeersLock.RUnlock()
 	//validate that the channels are in normal state
 	if inChannel.State != NORMAL {
 		return util.ErrIncomingChannelNotInNormalState
@@ -23,10 +25,10 @@ func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChann
 		return util.ErrOutgoingChannelNotInNormalState
 	}
 
-	if r.Node.IsPeerConnected(inChannel) {
+	if !r.Node.IsPeerConnected(inChannel) {
 		return util.ErrIncomingPeerDisconnected
 	}
-	if r.Node.IsPeerConnected(outChannel) {
+	if !r.Node.IsPeerConnected(outChannel) {
 		return util.ErrOutgoingPeerDisconnected
 	}
 	return nil
