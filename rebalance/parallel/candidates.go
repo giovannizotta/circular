@@ -57,6 +57,11 @@ func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error
 	if channel.State != rebalance.NORMAL {
 		return util.ErrChannelNotInNormalState
 	}
+
+	if r.Node.IsPeerConnected(channel) == false {
+		return util.ErrOutgoingPeerDisconnected
+	}
+	
 	return nil
 }
 

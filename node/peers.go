@@ -56,6 +56,15 @@ func (n *Node) GetChannelPeerFromScid(scid string) (*glightning.Peer, error) {
 	return nil, util.ErrNoPeerChannel
 }
 
+func (n *Node) IsPeerConnected(channel *glightning.PeerChannel) bool {
+	peer, err := n.GetChannelPeerFromScid(channel.ShortChannelId)
+	if err != nil {
+		return false
+	}
+
+	return peer.Connected
+}
+
 func (n *Node) GetGraphChannelFromPeerChannel(channel *glightning.PeerChannel, direction string) (*graph.Channel, error) {
 	channelId := channel.ShortChannelId + "/" + direction
 	return n.Graph.GetChannel(channelId)

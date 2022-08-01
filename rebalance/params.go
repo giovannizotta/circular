@@ -23,6 +23,12 @@ func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChann
 		return util.ErrOutgoingChannelNotInNormalState
 	}
 
+	if r.Node.IsPeerConnected(inChannel) {
+		return util.ErrIncomingPeerDisconnected
+	}
+	if r.Node.IsPeerConnected(outChannel) {
+		return util.ErrOutgoingPeerDisconnected
+	}
 	return nil
 }
 
