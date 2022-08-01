@@ -111,12 +111,14 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 	for r.InFlightAmount > 0 {
 		r.Node.Logln(glightning.Debug, "Waiting for result, InFlightAmount:", r.InFlightAmount)
 		rebalanceResult := <-r.RebalanceResultChan
+		
 
 		if rebalanceResult.Status == "success" {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
 			result.AddSuccess(rebalanceResult, r.Node.Graph.Aliases)
 			// if we had a success, we put the candidate back in front of the queue
-			r.EnqueueCandidate(rebalanceResult)
+			scid := rebalanceResult.Route.Hops[0].ShortChannelId
+			r.EnqueueCandidate(scid)
 		} else {
 			r.Node.Logf(glightning.Debug, "Failed rebalance: %+v", rebalanceResult)
 		}

@@ -40,6 +40,8 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 	if r.Candidates.Len() == 0 {
 		return util.ErrNoCandidates
 	}
+
+	r.Node.Logln(glightning.Info, "found ", r.Candidates.Len(), " candidates")
 	return nil
 }
 
@@ -85,8 +87,8 @@ func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
 	return nil, util.ErrNoCandidates
 }
 
-func (r *RebalanceParallel) EnqueueCandidate(result *rebalance.Result) {
-	scid := result.Route.Hops[0].ShortChannelId
+// put a candidate at the front of the queue
+func (r *RebalanceParallel) EnqueueCandidate(scid string) {
 	candidate, err := r.Node.GetOutgoingChannelFromScid(scid)
 	if err != nil {
 		r.Node.Logln(glightning.Debug, err)
