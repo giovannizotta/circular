@@ -87,8 +87,7 @@ func (n *Node) UpdateChannelBalance(outPeer, scid string, amount uint64) {
 
 	for _, channel := range n.Peers[outPeer].Channels {
 		if channel.ShortChannelId == scid {
-			channel.SpendableMilliSatoshi -= amount * 1000
-			channel.ReceivableMilliSatoshi += amount * 1000
+			channel.MilliSatoshiToUs -= amount * 1000
 			return
 		}
 	}

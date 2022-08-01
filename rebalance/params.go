@@ -31,10 +31,10 @@ func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 		return errors.New("outgoing channel is not in normal state")
 	}
 	//validate that the amount is less than the liquidity of the channels
-	if (inChannel.ReceivableMilliSatoshi) < r.Amount {
+	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
 		return errors.New("incoming channel has insufficient remote balance")
 	}
-	if (outChannel.SpendableMilliSatoshi) < r.Amount {
+	if (outChannel.MilliSatoshiToUs) < r.Amount {
 		return errors.New("outgoing channel has insufficient local balance")
 	}
 	r.Node.Logln(glightning.Debug, "liquidity parameters validated")
