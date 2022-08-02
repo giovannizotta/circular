@@ -52,7 +52,8 @@ func (n *Node) SaveGraphToFile(dir, filename string) error {
 		}
 	}
 
-	if err := n.serializeToFile(dir, filename); err != nil {
+	filename = dir + "/" + filename
+	if err := n.serializeToFile(filename); err != nil {
 		return err
 	}
 
@@ -69,9 +70,8 @@ func (n *Node) SaveGraphToFile(dir, filename string) error {
 	return nil
 }
 
-func (n *Node) serializeToFile(dir, filename string) error {
+func (n *Node) serializeToFile(filename string) error {
 	// open temporary file
-	filename = dir + "/" + filename
 	file, err := os.Create(filename + ".tmp")
 	if err != nil {
 		return err
