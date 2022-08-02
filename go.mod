@@ -8,6 +8,7 @@ require (
 	github.com/gammazero/deque v0.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.7.0
+	github.com/virtuald/go-paniclog v0.0.0-20190812204905-43a7fa316459
 )
 
 require (
