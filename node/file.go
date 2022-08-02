@@ -35,7 +35,7 @@ func (n *Node) LoadGraphFromFile(dir, filename string) error {
 	for _, c := range g.Channels {
 		g.AddChannel(c)
 	}
-	
+
 	n.Graph = g
 
 	n.Logln(glightning.Info, "graph loaded successfully")
@@ -45,31 +45,16 @@ func (n *Node) LoadGraphFromFile(dir, filename string) error {
 func (n *Node) SaveGraphToFile(dir, filename string) error {
 	defer util.TimeTrack(time.Now(), "graph.SaveGraphToFile", n.Logf)
 
-	//check if dir exists, otherwise create it
+	// check if dir exists, otherwise create it
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, 0755)
-		if err != nil {
-			n.Logln(glightning.Unusual, "unable to create directory:", err)
+		if err := os.Mkdir(dir, 0755); err != nil {
+			return err
 		}
 	}
 
-	// open temporary file
-	filename = dir + "/" + filename
-	file, err := os.Create(filename + ".tmp")
-	if err != nil {
-		n.Logf(glightning.Unusual, "error opening file: %v", err)
+	if err := n.serializeToFile(dir, filename); err != nil {
 		return err
 	}
-	defer file.Close()
-
-	// write json
-	n.Graph.Lock()
-	err = json.NewEncoder(file).Encode(n.Graph)
-	if err != nil {
-		n.Logf(glightning.Unusual, "error writing file: %v", err)
-		return err
-	}
-	n.Graph.Unlock()
 
 	// save old file
 	// check if filename exists
@@ -77,8 +62,26 @@ func (n *Node) SaveGraphToFile(dir, filename string) error {
 		err = os.Rename(filename, filename+".old")
 	}
 	// rename tmp to filename
-	err = os.Rename(filename+".tmp", filename)
+	if err := os.Rename(filename+".tmp", filename); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Node) serializeToFile(dir, filename string) error {
+	// open temporary file
+	filename = dir + "/" + filename
+	file, err := os.Create(filename + ".tmp")
 	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write json
+	n.Graph.Lock()
+	defer n.Graph.Unlock()
+	if err := json.NewEncoder(file).Encode(n.Graph); err != nil {
 		return err
 	}
 	return nil
