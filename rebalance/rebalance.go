@@ -33,15 +33,12 @@ func NewRebalance(outChannel, inChannel *graph.Channel, amount, maxppm uint64, a
 }
 
 func (r *Rebalance) Setup() error {
-	err := r.setDefaults()
-	if err != nil {
+	r.setDefaults()
+
+	if err := r.validateLiquidityParameters(r.OutChannel, r.InChannel); err != nil {
 		return err
 	}
 
-	err = r.validateLiquidityParameters(r.OutChannel, r.InChannel)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

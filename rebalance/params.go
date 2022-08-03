@@ -78,7 +78,7 @@ func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 	return nil
 }
 
-func (r *Rebalance) setDefaults() error {
+func (r *Rebalance) setDefaults() {
 	//convert to msatoshi
 	r.Amount *= 1000
 	if r.Amount == 0 {
@@ -97,5 +97,4 @@ func (r *Rebalance) setDefaults() error {
 		r.MaxHops = DEFAULT_MAXHOPS
 		r.Node.Logln(glightning.Debug, "maxHops not provided, using default value", r.MaxHops)
 	}
-	return nil
 }
