@@ -92,7 +92,6 @@ func (r *Rebalance) Run() *Result {
 			break
 		}
 
-		// TODO: handle case where the peer channel has gone offline (First peer not ready)
 		if err != util.ErrTemporaryFailure {
 			lastError = err.Error()
 			break

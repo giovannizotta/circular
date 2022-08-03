@@ -2,6 +2,7 @@ package rebalance
 
 import (
 	"circular/graph"
+	"circular/node"
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"time"
@@ -32,7 +33,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 }
 
 func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
-	paymentSecret, err := r.Node.GeneratePreimageHashPair()
+	paymentSecretHash, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +45,15 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 	}
 
 	prettyRoute := graph.NewPrettyRoute(route)
+
+	// save route to DB
+	if err := r.Node.SaveToDb(node.ROUTE_PREFIX+paymentSecretHash, prettyRoute); err != nil {
+		r.Node.Logln(glightning.Unusual, "unable to save route to db: ", err)
+	}
 	r.Node.Logln(glightning.Debug, prettyRoute)
 	r.Node.Logln(glightning.Info, prettyRoute.Simple())
 
-	_, err = r.Node.SendPay(route, paymentSecret)
+	_, err = r.Node.SendPay(route, paymentSecretHash)
 	if err != nil {
 		if err == util.ErrSendPayTimeout {
 			return nil, err

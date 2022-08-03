@@ -12,6 +12,7 @@ import (
 const (
 	FAILURE_PREFIX  = "f_"
 	SUCCESS_PREFIX  = "s_"
+	ROUTE_PREFIX    = "r_"
 	TIMEOUT_PREFIX  = "timeout_"
 	SENDPAY_TIMEOUT = 120 // 2 minutes
 )
@@ -79,19 +80,29 @@ func (n *Node) deleteIfOurs(paymentHash string) error {
 	return nil
 }
 
+func (n *Node) SaveToDb(key string, value interface{}) error {
+	b, err := json.Marshal(value)
+	if err != nil {
+		n.Logln(glightning.Unusual, err)
+		return err
+	}
+
+	err = n.DB.Set(key, b)
+	if err != nil {
+		n.Logln(glightning.Unusual, err)
+		return err
+	}
+
+	return nil
+}
+
 func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 	if err := n.deleteIfOurs(sf.Data.PaymentHash); err != nil {
-		return
+		return // this payment was not made by us
 	}
 
 	// save to db
-	bytes, err := json.Marshal(sf)
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-
-	err = n.DB.Set(FAILURE_PREFIX+sf.Data.PaymentHash, bytes)
-	if err != nil {
+	if err := n.SaveToDb(FAILURE_PREFIX+sf.Data.PaymentHash, sf); err != nil {
 		n.Logln(glightning.Unusual, err)
 	}
 
@@ -106,19 +117,12 @@ func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 }
 
 func (n *Node) OnPaymentSuccess(ss *glightning.SendPaySuccess) {
-	err := n.deleteIfOurs(ss.PaymentHash)
-	if err != nil {
+	if err := n.deleteIfOurs(ss.PaymentHash); err != nil {
 		return // this payment was not made by us
 	}
 
 	// save to db
-	bytes, err := json.Marshal(ss)
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-
-	err = n.DB.Set(SUCCESS_PREFIX+ss.PaymentHash, bytes)
-	if err != nil {
+	if err := n.SaveToDb(SUCCESS_PREFIX+ss.PaymentHash, ss); err != nil {
 		n.Logln(glightning.Unusual, err)
 	}
 }

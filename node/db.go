@@ -1,6 +1,7 @@
 package node
 
 import (
+	"circular/graph"
 	"encoding/json"
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/elementsproject/glightning/glightning"
@@ -108,6 +109,33 @@ func (s *Store) ListSuccesses() ([]glightning.SendPaySuccess, error) {
 				return err
 			}
 			result = append(result, sf)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *Store) ListRoutes() ([]graph.PrettyRoute, error) {
+	result := make([]graph.PrettyRoute, 0)
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		prefix := []byte(ROUTE_PREFIX)
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			item := it.Item()
+			v, err := item.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			var pr graph.PrettyRoute
+			err = json.Unmarshal(v, &pr)
+			if err != nil {
+				return err
+			}
+			result = append(result, pr)
 		}
 		return nil
 	})
