@@ -30,7 +30,7 @@ func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 	})
 
 	addCronJob(c, strconv.Itoa(STATS_REFRESH_INTERVAL)+"m", func() {
-		n.Logln(glightning.Info, n.GetStats())
+		n.Logln(glightning.Info, n.GetStats().String())
 	})
 
 	c.Start()

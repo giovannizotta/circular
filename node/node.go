@@ -7,7 +7,6 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"math/rand"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -102,7 +101,7 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.Logln(glightning.Debug, "setting up cronjobs")
 	n.setupCronJobs(options)
 
-	n.Logln(glightning.Debug, n.GetStats())
+	n.Logln(glightning.Debug, n.GetStats().String())
 	n.Logln(glightning.Info, "node initialized")
 }
 
@@ -112,39 +111,6 @@ func (n *Node) Logf(level glightning.LogLevel, format string, v ...any) {
 
 func (n *Node) Logln(level glightning.LogLevel, v ...any) {
 	n.plugin.Log(util.GetCallInfo()+fmt.Sprint(v...), level)
-}
-
-func (n *Node) GetStats() string {
-	var result string
-	result += "Node stats:" + "\n"
-	result += "Peers: " + strconv.Itoa(len(n.Peers)) + "\n"
-
-	result += n.Graph.GetStats() + "\n"
-
-	successes, err := n.DB.ListSuccesses()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-	result += "successes: " + strconv.Itoa(len(successes)) + "\n"
-
-	var totalMoved uint64 = 0
-	for _, s := range successes {
-		totalMoved += s.MilliSatoshi
-	}
-	result += "Total amount of BTC rebalanced: " + strconv.FormatUint(totalMoved/1000, 10) + "sats" + "\n"
-
-	failures, err := n.DB.ListFailures()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-	result += "failures: " + strconv.Itoa(len(failures)) + "\n"
-
-	routes, err := n.DB.ListRoutes()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-	result += "routes: " + strconv.Itoa(len(routes))
-	return result
 }
 
 func (n *Node) RefreshChannel(channel *graph.Channel) {

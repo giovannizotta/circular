@@ -3,8 +3,6 @@ package graph
 import (
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -98,37 +96,6 @@ func (g *Graph) RefreshAliases(nodes []*glightning.Node) {
 	for _, n := range nodes {
 		g.Aliases[n.Id] = n.Alias
 	}
-}
-
-func (g *Graph) GetStats() string {
-	g.channelsLock.RLock()
-	g.adjacencyListLock.RLock()
-	defer g.adjacencyListLock.RUnlock()
-	defer g.channelsLock.RUnlock()
-
-	activeChannels := 0
-	atLeast200kLiquidity := 0
-	atLeast200kMaxHtlc := 0
-	for _, c := range g.Channels {
-		if c.IsActive {
-			activeChannels++
-		}
-		if c.Liquidity >= 200000000 {
-			atLeast200kLiquidity++
-		}
-		maxHtlc, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
-		if maxHtlc >= 200000000 {
-			atLeast200kMaxHtlc++
-		}
-	}
-	var result string
-	result += "Graph stats:\n"
-	result += "graph has " + strconv.Itoa(len(g.Inbound)) + " nodes\n"
-	result += "graph has " + strconv.Itoa(len(g.Channels)) + " channels\n"
-	result += "graph has " + strconv.Itoa(activeChannels) + " active channels\n"
-	result += "graph has " + strconv.Itoa(atLeast200kLiquidity) + " channels believed to have at least 200k liquidity\n"
-	result += "graph has " + strconv.Itoa(atLeast200kMaxHtlc) + " channels with at least 200k max htlc"
-	return result
 }
 
 func (g *Graph) PruneChannels() {

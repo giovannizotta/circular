@@ -1,6 +1,7 @@
 package main
 
 import (
+	"circular/node"
 	"circular/rebalance"
 	"circular/rebalance/parallel"
 	"github.com/elementsproject/glightning/glightning"
@@ -21,5 +22,10 @@ func registerMethods(p *glightning.Plugin) {
 	rpcRebalanceParallel.LongDesc = "Rebalance the channel `inchannel` from many channels concurrently"
 	rpcRebalanceParallel.Category = "utility"
 	p.RegisterMethod(rpcRebalanceParallel)
+
+	rpcStats := glightning.NewRpcMethod(&node.Stats{}, "Stats")
+	rpcStats.LongDesc = "Get the stats of the usage of circular"
+	rpcStats.Category = "utility"
+	p.RegisterMethod(rpcStats)
 
 }
