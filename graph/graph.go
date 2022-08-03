@@ -10,13 +10,9 @@ import (
 )
 
 const (
-	GRAPH_REFRESH             = "10m"
-	FILE                      = "graph.json"
-	PRUNING_INTERVAL     uint = 1209600 // 14 days
-	AVERAGE_AGING_AMOUNT      = 0       // the amount by which the liquidity belief is updated
-	AGING_VARIANCE            = 0       // the range (+/-) of the random amount added to the liquidity belief
-	// for example, for an AVERAGE_AGING_AMOUNT of 10k and an AGING_VARIANCE of 5k
-	// the liquidity belief will be updated by a random amount between 5k and 15k	(10k +- 5k)
+	FILE                                = "graph.json"
+	DEFAULT_GRAPH_REFRESH_INTERVAL      = 10      // minutes
+	PRUNING_INTERVAL               uint = 1209600 // 14 days
 )
 
 // Edge contains All the SCIDs of the channels going from nodeA to nodeB

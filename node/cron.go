@@ -5,24 +5,34 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/robfig/cron/v3"
 	"log"
+	"strconv"
 	"time"
 )
 
 const (
-	STATS_REFRESH_INTERVAL = "10m"
+	LIQUIDITY_REFRESH_INTERVAL = 10
+	STATS_REFRESH_INTERVAL     = 10
 )
 
 func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
-	addCronJob(c, options["graph_refresh"].GetValue().(string), func() {
+
+	addCronJob(c, strconv.Itoa(options["circular-graph-refresh"].GetValue().(int))+"m", func() {
 		n.refreshGraph()
 	})
-	addCronJob(c, options["peer_refresh"].GetValue().(string), func() {
+
+	addCronJob(c, strconv.Itoa(options["circular-peer-refresh"].GetValue().(int))+"s", func() {
 		n.refreshPeers()
 	})
-	addCronJob(c, STATS_REFRESH_INTERVAL, func() {
+
+	addCronJob(c, strconv.Itoa(LIQUIDITY_REFRESH_INTERVAL)+"m", func() {
+		n.refreshLiquidity()
+	})
+
+	addCronJob(c, strconv.Itoa(STATS_REFRESH_INTERVAL)+"m", func() {
 		n.PrintStats()
 	})
+
 	c.Start()
 }
 

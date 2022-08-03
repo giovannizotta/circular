@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	CIRCULAR_DIR = "circular"
-	PEER_REFRESH = "30s"
+	CIRCULAR_DIR                     = "circular"
+	DEFAULT_PEER_REFRESH_INTERVAL    = 30  // seconds
+	DEFAULT_LIQUIDITY_RESET_INTERVAL = 300 // minutes
 )
 
 var (
@@ -111,7 +112,7 @@ func (n *Node) Logln(level glightning.LogLevel, v ...any) {
 
 func (n *Node) PrintStats() {
 	n.Logln(glightning.Info, "Node stats:")
-	n.Logln(glightning.Info, "Peers:", len(n.Peers))
+	n.Logln(glightning.Info, "Peers: ", len(n.Peers))
 
 	n.Logln(glightning.Info, n.Graph.GetStats())
 

@@ -8,17 +8,24 @@ import (
 )
 
 func registerOptions(p *glightning.Plugin) {
-	err := p.RegisterNewOption("graph_refresh",
-		"How often the gossip graph gets refreshed",
-		graph.GRAPH_REFRESH)
-	if err != nil {
-		log.Fatalln("error registering option graph_refresh:", err)
+	if err := p.RegisterNewIntOption("circular-graph-refresh",
+		"How often the gossip graph gets refreshed (minutes)",
+		graph.DEFAULT_GRAPH_REFRESH_INTERVAL); err != nil {
+
+		log.Fatalln("error registering option circular-graph-refresh:", err)
 	}
 
-	err = p.RegisterNewOption("peer_refresh",
-		"How often the peer list gets refreshed",
-		node.PEER_REFRESH)
-	if err != nil {
-		log.Fatalln("error registering option peer_refresh:", err)
+	if err := p.RegisterNewIntOption("circular-peer-refresh",
+		"How often the peer list gets refreshed (seconds)",
+		node.DEFAULT_PEER_REFRESH_INTERVAL); err != nil {
+
+		log.Fatalln("error registering option circular-peer-refresh:", err)
+	}
+
+	if err := p.RegisterNewIntOption("circular-liquidity-refresh",
+		"The period of time after which the liquidity is reset (minutes)",
+		node.LIQUIDITY_REFRESH_INTERVAL); err != nil {
+
+		log.Fatalln("error registering option circular-liquidity-reset:", err)
 	}
 }
