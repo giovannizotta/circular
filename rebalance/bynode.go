@@ -68,7 +68,7 @@ func (r *RebalanceByNode) Call() (jrpc2.Result, error) {
 		return nil, err
 	}
 
-	return rebalance.Run()
+	return rebalance.Run(), nil
 }
 
 func (r *RebalanceByNode) validatePeers() error {

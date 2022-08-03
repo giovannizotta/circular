@@ -96,6 +96,7 @@ func (r *RebalanceParallel) FireCandidates() {
 		r.Fire(candidate)
 
 		r.AmountLock.L.Lock()
+		r.InFlightAmount += r.SplitAmount
 		carryOn = r.AmountRebalanced+r.InFlightAmount < r.Amount
 		splitsInFlight = int(r.InFlightAmount / r.SplitAmount)
 		r.AmountLock.L.Unlock()
@@ -108,16 +109,20 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 	start := time.Now()
 	result := NewResult(r.Amount)
 
+	// while there's something inflight, wait for results
 	for r.InFlightAmount > 0 {
 		r.Node.Logln(glightning.Debug, "Waiting for result, InFlightAmount:", r.InFlightAmount)
 		rebalanceResult := <-r.RebalanceResultChan
-		
+
 		r.TotalAttempts += rebalanceResult.Attempts
 
 		if rebalanceResult.Status == "success" {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
+
+			// update results data
 			result.AddSuccess(rebalanceResult, r.Node.Graph.Aliases)
-			// if we had a success, we put the candidate back in front of the queue
+
+			// put the candidate back in front of the queue
 			scid := rebalanceResult.Route.Hops[0].ShortChannelId
 			r.EnqueueCandidate(scid)
 		} else {
@@ -130,6 +135,8 @@ func (r *RebalanceParallel) WaitForResult() (jrpc2.Result, error) {
 		// now that we had a result, we can fire more candidates
 		r.FireCandidates()
 	}
+
+	// rebalance is over
 	result.Attempts = r.TotalAttempts
 	result.Time = fmt.Sprintf("%.3fs", float64(time.Since(start).Milliseconds())/1000)
 	return result, nil
@@ -139,13 +146,8 @@ func (r *RebalanceParallel) Fire(candidate *graph.Channel) {
 	r.Node.Logln(glightning.Debug, "Firing candidate:", candidate.ShortChannelId)
 	rebalance := rebalance2.NewRebalance(candidate, r.InChannel, r.SplitAmount, r.MaxPPM, r.Attempts, r.MaxHops)
 
-	r.AmountLock.L.Lock()
-	r.InFlightAmount += rebalance.Amount
-	r.AmountLock.L.Unlock()
-
 	go func() {
-		result, _ := rebalance.Run()
-		r.RebalanceResultChan <- result
+		r.RebalanceResultChan <- rebalance.Run()
 	}()
 }
 

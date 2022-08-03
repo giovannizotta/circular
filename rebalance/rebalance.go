@@ -45,7 +45,7 @@ func (r *Rebalance) Setup() error {
 	return nil
 }
 
-func (r *Rebalance) Run() (*Result, error) {
+func (r *Rebalance) Run() *Result {
 	var (
 		maxHops   = 3
 		i         = 1
@@ -65,7 +65,7 @@ func (r *Rebalance) Run() (*Result, error) {
 		if err == nil {
 			result.Attempts = uint64(i)
 			r.Node.Logln(glightning.Debug, result)
-			return result, nil
+			return result
 		}
 
 		// no route found with at most maxHops
@@ -105,7 +105,7 @@ func (r *Rebalance) Run() (*Result, error) {
 	failure.Message = "rebalance failed after " + strconv.Itoa(int(failure.Attempts)) + " attempts."
 	failure.Message += lastError
 
-	return failure, nil
+	return failure
 }
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
