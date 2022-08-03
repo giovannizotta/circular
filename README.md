@@ -6,11 +6,18 @@ It optimizes on **fees**, and it's designed to be used by routing nodes who do n
 It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments. Initially it doesn't know anything about the graph, but it will learn about it as it fails payments.
 
 ## Features
-* Rebalance by Short Channel Id or by Node Id
-* Rebalance a channel from multiple sources in parallel
+* Lightweight
 * No invoices
 * Liquidity information is stored in `graph.json`
-* Success and failure data is stored in the database
+* Usage data is stored in the database
+
+## Endpoints
+* `circular`: Rebalance a channel by scid
+* `circular-node`: Rebalance a channel by node id
+* `circular-parallel`: Rebalance a channel using many channels as source in parallel
+* `circular-stats`: Get stats about the usage of the plugin
+
+Detailed explanation of the endpoints follows in the Usage section.
 
 ## Building
 You need Go 1.18 or higher to build this plugin.
@@ -72,11 +79,15 @@ The actual amount that is going to be left in the outgoing channels is the minim
 
 Example: you have a 10M channel and you set `depleteuptopercent` to 0.2 (20%) and `depleteuptoamount` to 1000000. The actual amount that will be left in that channel will be the minimum of 0.2 and 1000000. So in this case, at least 1000000 sats will be left in that channel.
 
-## Roadmap
-The following is a list of features that will be added in the future:
-* Liquidity aging policy: right now if there is a failure on a channel, the liquidity belief doesn't move until that channel is used again. This information might change over time, and we want to keep that into account.
-* More granularity in error management
-* More testing
+### Get stats about the usage of the plugin
+```bash
+lightning-cli circular-stats
+```
+This command will return the following stats:
+* `graph_stats`: stats about the graph that `circular` has learned
+* `successes`: successful rebalances done by `circular`
+* `failures`: failed rebalances done by `circular`
+* `routes`: routes taken by `circular`
 
 ## Contributing
 If you have any problems feel free to open an issue or join our [Telegram group](https://t.me/+u_R8kAfpSJBjMjI0). Pull requests are welcome as well.
