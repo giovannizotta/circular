@@ -24,7 +24,7 @@ func registerOptions(p *glightning.Plugin) {
 
 	if err := p.RegisterNewIntOption("circular-liquidity-refresh",
 		"The period of time after which the liquidity is reset (minutes)",
-		node.LIQUIDITY_REFRESH_INTERVAL); err != nil {
+		node.DEFAULT_LIQUIDITY_RESET_INTERVAL); err != nil {
 
 		log.Fatalln("error registering option circular-liquidity-reset:", err)
 	}

@@ -61,6 +61,8 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.lightning = lightning
 	n.plugin = plugin
 	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
+	n.Logln(glightning.Debug, "liquidity refresh interval: ", int(n.liquidityRefresh.Minutes()), " minutes")
+
 	n.Logln(glightning.Info, "initializing node")
 	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()
