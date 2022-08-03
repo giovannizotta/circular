@@ -64,3 +64,11 @@ func GetCallInfo() string {
 	function := RemoveBeforeCharacter(frame.Function, ".")
 	return fmt.Sprintf("%s:%d %s: ", filename, frame.Line, function)
 }
+
+func GetMapValues[T any](m map[string]T) []T {
+	values := make([]T, 0, len(m))
+	for _, v := range m {
+		values = append(values, v)
+	}
+	return values
+}

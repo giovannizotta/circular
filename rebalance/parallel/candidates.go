@@ -16,8 +16,10 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 	r.Node.PeersLock.RLock()
 	defer r.Node.PeersLock.RUnlock()
 
+	peers := r.GetOutList()
+
 	r.Candidates = deque.New[*graph.Channel]()
-	for _, peer := range r.Node.Peers {
+	for _, peer := range peers {
 		if peer.Id == inPeer {
 			continue
 		}
@@ -43,6 +45,32 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 
 	r.Node.Logln(glightning.Info, "found ", r.Candidates.Len(), " candidates")
 	return nil
+}
+
+func (r *RebalanceParallel) GetOutList() []*glightning.Peer {
+	r.Node.PeersLock.RLock()
+	defer r.Node.PeersLock.RUnlock()
+
+	if r.OutList == nil {
+		// if no outlist was supplied, consider all peers as potential candidates
+		return util.GetMapValues(r.Node.Peers)
+	} else {
+		// if an outlist was supplied, consider only the peers in the outlist as potential candidates
+		result := make([]*glightning.Peer, 0)
+		for _, peer := range r.OutList {
+			if _, ok := r.Node.Peers[peer]; ok {
+				result = append(result, r.Node.Peers[peer])
+			} else {
+				r.Node.Logln(glightning.Unusual, "peer in outlist does not exist: ", peer)
+			}
+		}
+
+		// if an outlist was supplied, ignore maxoutppm. To do this we put it to "infinity"
+		r.MaxOutPPM = 1 << 63
+		r.Node.Logln(glightning.Debug, "using outlist: ", r.OutList, " maxoutppm:", r.MaxOutPPM)
+
+		return result
+	}
 }
 
 func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error {

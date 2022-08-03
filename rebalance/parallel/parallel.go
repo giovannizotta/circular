@@ -19,6 +19,7 @@ type RebalanceParallel struct {
 	MaxPPM              uint64                       `json:"maxppm,omitempty"`
 	Splits              int                          `json:"splits,omitempty"`
 	SplitAmount         uint64                       `json:"splitamount,omitempty"`
+	OutList             []string                     `json:"outlist,omitempty"`
 	MaxOutPPM           uint64                       `json:"maxoutppm,omitempty"`
 	DepleteUpToPercent  float64                      `json:"depleteuptopercent,omitempty"`
 	DepleteUpToAmount   uint64                       `json:"depleteuptoamount,omitempty"`
