@@ -25,6 +25,7 @@ var (
 type Node struct {
 	lightning           *glightning.Lightning
 	plugin              *glightning.Plugin
+	liquidityRefresh    time.Duration
 	initLock            *sync.Mutex
 	PeersLock           *sync.RWMutex
 	Id                  string
@@ -59,7 +60,7 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 
 	n.lightning = lightning
 	n.plugin = plugin
-
+	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
 	n.Logln(glightning.Info, "initializing node")
 	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()

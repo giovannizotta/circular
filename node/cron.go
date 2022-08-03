@@ -92,3 +92,11 @@ func (n *Node) refreshPeers() error {
 	}
 	return nil
 }
+
+func (n *Node) refreshLiquidity() {
+	defer util.TimeTrack(time.Now(), "node.refreshLiquidity", n.Logf)
+	n.Logln(glightning.Debug, "refreshing liquidity")
+
+	hits := n.Graph.RefreshLiquidity(n.liquidityRefresh)
+	n.Logf(glightning.Info, "liquidity has been reset on %d channels", hits)
+}

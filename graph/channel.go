@@ -5,17 +5,20 @@ import (
 	"github.com/elementsproject/glightning/glightning"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Channel struct {
 	*glightning.Channel `json:"channel"`
 	Liquidity           uint64 `json:"liquidity"`
+	Timestamp           int64  `json:"timestamp"`
 }
 
-func NewChannel(channel *glightning.Channel, liquidity uint64) *Channel {
+func NewChannel(channel *glightning.Channel, liquidity uint64, timestamp int64) *Channel {
 	return &Channel{
 		Channel:   channel,
 		Liquidity: liquidity,
+		Timestamp: timestamp,
 	}
 }
 
@@ -62,4 +65,9 @@ func (c *Channel) CanForward(amount uint64) bool {
 		minHtlcMsat <= amount,
 	}
 	return util.All(conditions)
+}
+
+func (c *Channel) ResetLiquidity() {
+	c.Liquidity = uint64(0.5 * float64(c.Satoshis*1000))
+	c.Timestamp = time.Now().Unix()
 }
