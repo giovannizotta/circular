@@ -89,6 +89,12 @@ func (r *Rebalance) Run() *Result {
 			break
 		}
 
+		// wire fee insufficient. Most likely someone in the route has updated their fees, and gossip didn't reach us yet.
+		if err == util.ErrWireFeeInsufficient {
+			lastError = "wire fee insufficient. Most likely someone in the route has updated their fees, and gossip didn't reach us yet."
+			break
+		}
+
 		if err != util.ErrTemporaryFailure {
 			lastError = err.Error()
 			break

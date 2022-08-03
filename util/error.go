@@ -22,8 +22,9 @@ func (e ErrRouteTooExpensive) Error() string {
 }
 
 var (
-	ErrTemporaryFailure = errors.New("TEMPORARY_FAILURE")
-	ErrSendPayTimeout   = errors.New("200:Timed out while waiting")
+	ErrSendPayTimeout      = errors.New("200:Timed out while waiting")
+	ErrTemporaryFailure    = errors.New("204:failed: WIRE_TEMPORARY_CHANNEL_FAILURE (reply from remote)")
+	ErrWireFeeInsufficient = errors.New("204:failed: WIRE_FEE_INSUFFICIENT (reply from remote)")
 
 	ErrNoRequiredParameter         = errors.New("missing required parameter")
 	ErrSelfNode                    = errors.New("one of the nodes is self")

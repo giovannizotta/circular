@@ -31,6 +31,9 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	result, err := n.lightning.WaitSendPay(paymentHash, SENDPAY_TIMEOUT)
 
 	if err != nil {
+		n.Logf(glightning.Debug, "%+v", err)
+		n.Logln(glightning.Debug, "err.Error(): ", err.Error())
+
 		if err.Error() == util.ErrSendPayTimeout.Error() {
 
 			// delete the preimage from the DB. In this way the payment will fail when the HTLC comes in
@@ -48,7 +51,11 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 			return nil, util.ErrSendPayTimeout
 		}
 
-		n.Logln(glightning.Debug, err)
+		if err.Error() == util.ErrWireFeeInsufficient.Error() {
+			n.Logln(glightning.Debug, "wire fee insufficient error")
+			return nil, util.ErrWireFeeInsufficient
+		}
+
 		return nil, err
 	}
 
