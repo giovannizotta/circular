@@ -21,8 +21,8 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 	// TODO: consider that 32bits fees can be a problem but the api does it in that way
 	g.channelsLock.RLock()
 	g.adjacencyListLock.RLock()
-	defer g.adjacencyListLock.RUnlock()
 	defer g.channelsLock.RUnlock()
+	defer g.adjacencyListLock.RUnlock()
 
 	if _, ok := g.Inbound[dst]; !ok {
 		return nil, util.ErrNoSuchNode

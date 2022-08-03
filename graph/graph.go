@@ -49,9 +49,9 @@ func (g *Graph) Lock() {
 }
 
 func (g *Graph) Unlock() {
-	g.adjacencyListLock.Unlock()
-	g.channelsLock.Unlock()
 	g.aliasesLock.Unlock()
+	g.channelsLock.Unlock()
+	g.adjacencyListLock.Unlock()
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
