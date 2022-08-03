@@ -76,7 +76,7 @@ Optional parameters:
 cli circular-parallel -k inscid=123456x1x1 outlist='["03700917a25f79a3e427fe86e49b5041b583c73dd223cfa9a87cd6be5076b7b7a5", "025614be3600e9899bc044d331ab58a9fe1ccf30e75ae35943cdd11218a0a55dba"]' amount=800000 splitamount=80000 splits=4 maxppm=5000
 ```
 
-depleteuptopercent` and `depleteuptoamount` are a bit special: 
+`depleteuptopercent` and `depleteuptoamount` are a bit special: 
 * `depleteuptopercent`(default=0.2) is a threshold percentage for the amount to leave in the outgoing channels. This must be between 0 and 1.
 * `depleteuptoamount`(sats, default=1000000) is a value in sats for the amount to leave in the outgoing channels.
 The actual amount that is going to be left in the outgoing channels is the minimum of `depleteuptopercent` and `depleteuptoamount`.
