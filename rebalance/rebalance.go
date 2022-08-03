@@ -108,13 +108,7 @@ func (r *Rebalance) Run() *Result {
 }
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
-	r.Node.Logln(glightning.Debug, "refreshing in and out channels")
-	// TODO: this refreshes fees, but not spendable and receivable amounts
-	r.Node.RefreshChannel(r.OutChannel)
-	r.Node.RefreshChannel(r.InChannel)
-
-	err := r.validateLiquidityParameters(r.OutChannel, r.InChannel)
-	if err != nil {
+	if err := r.validateLiquidityParameters(r.OutChannel, r.InChannel); err != nil {
 		return nil, err
 	}
 

@@ -61,7 +61,7 @@ func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error
 	if r.Node.IsPeerConnected(channel) == false {
 		return util.ErrOutgoingPeerDisconnected
 	}
-	
+
 	return nil
 }
 
@@ -70,9 +70,9 @@ func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
 	r.Node.Logln(glightning.Debug, "getting next candidate")
 	for r.Candidates.Len() > 0 {
 
-		r.QueueLock.L.Lock()
+		r.QueueLock.Lock()
 		candidate = r.Candidates.PopFront()
-		r.QueueLock.L.Unlock()
+		r.QueueLock.Unlock()
 		r.Node.Logln(glightning.Debug, "got candidate:", candidate.ShortChannelId)
 
 		peerChannel, err := r.Node.GetPeerChannelFromGraphChannel(candidate)
@@ -100,7 +100,7 @@ func (r *RebalanceParallel) EnqueueCandidate(scid string) {
 		return
 	}
 
-	r.QueueLock.L.Lock()
+	r.QueueLock.Lock()
 	r.Candidates.PushFront(candidate)
-	r.QueueLock.L.Unlock()
+	r.QueueLock.Unlock()
 }

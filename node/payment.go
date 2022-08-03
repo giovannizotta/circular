@@ -35,15 +35,13 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 
 			// delete the preimage from the DB. In this way the payment will fail when the HTLC comes in
 			n.Logln(glightning.Debug, "payment timed out, deleting preimage from database")
-			err = n.DB.Delete(paymentHash)
-			if err != nil {
+			if err := n.DB.Delete(paymentHash); err != nil {
 				n.Logln(glightning.Unusual, err)
 			}
 
 			// save the failure in the DB. This will be used to update the liquidity
-			n.Logln(glightning.Debug, "saving payment failure to database")
-			err = n.DB.Set(TIMEOUT_PREFIX+paymentHash, []byte("timeout"))
-			if err != nil {
+			n.Logln(glightning.Debug, "saving payment timeout to database")
+			if err := n.DB.Set(TIMEOUT_PREFIX+paymentHash, []byte("timeout")); err != nil {
 				n.Logln(glightning.Unusual, err)
 			}
 
@@ -80,7 +78,7 @@ func (n *Node) deleteIfOurs(paymentHash string) error {
 	return nil
 }
 
-func (n *Node) SaveToDb(key string, value interface{}) error {
+func (n *Node) SaveToDb(key string, value any) error {
 	b, err := json.Marshal(value)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)

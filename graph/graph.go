@@ -71,8 +71,8 @@ func (g *Graph) AddChannel(c *Channel) {
 func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 	g.channelsLock.Lock()
 	g.adjacencyListLock.Lock()
-	defer g.adjacencyListLock.Unlock()
 	defer g.channelsLock.Unlock()
+	defer g.adjacencyListLock.Unlock()
 
 	// we need to do NewChannel and not only update the liquidity because of gossip updates
 	for _, c := range channelList {

@@ -17,6 +17,7 @@ const (
 func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChannel) error {
 	r.Node.PeersLock.RLock()
 	defer r.Node.PeersLock.RUnlock()
+
 	//validate that the channels are in normal state
 	if inChannel.State != NORMAL {
 		return util.ErrIncomingChannelNotInNormalState
@@ -34,7 +35,28 @@ func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChann
 	return nil
 }
 
+func (r *Rebalance) checkLiquidity(inChannel, outChannel *glightning.PeerChannel) error {
+	r.Node.PeersLock.RLock()
+	defer r.Node.PeersLock.RUnlock()
+
+	//validate that the amount is less than the liquidity of the channels
+	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
+		return util.ErrIncomingChannelDepleted
+	}
+	if (outChannel.MilliSatoshiToUs) < r.Amount {
+		return util.ErrOutgoingChannelDepleted
+	}
+	return nil
+}
+
 func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
+	r.Node.Logln(glightning.Debug, "validating liquidity parameters")
+
+	r.Node.Logln(glightning.Debug, "refreshing in and out channels")
+	// TODO: this refreshes fees, but not spendable and receivable amounts
+	r.Node.RefreshChannel(r.OutChannel)
+	r.Node.RefreshChannel(r.InChannel)
+
 	inChannel, err := r.Node.GetPeerChannelFromGraphChannel(in)
 	if err != nil {
 		return err
@@ -44,18 +66,14 @@ func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 		return err
 	}
 
-	err = r.checkConnections(inChannel, outChannel)
-	if err != nil {
+	if err := r.checkConnections(inChannel, outChannel); err != nil {
 		return err
 	}
 
-	//validate that the amount is less than the liquidity of the channels
-	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
-		return util.ErrIncomingChannelDepleted
+	if err := r.checkLiquidity(inChannel, outChannel); err != nil {
+		return err
 	}
-	if (outChannel.MilliSatoshiToUs) < r.Amount {
-		return util.ErrOutgoingChannelDepleted
-	}
+
 	r.Node.Logln(glightning.Debug, "liquidity parameters validated")
 	return nil
 }

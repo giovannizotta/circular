@@ -114,6 +114,7 @@ func (n *Node) Logln(level glightning.LogLevel, v ...any) {
 }
 
 func (n *Node) RefreshChannel(channel *graph.Channel) {
+	// this is needed to get up-to-date fees and channel info such as state
 	channels, err := n.lightning.GetChannel(channel.ShortChannelId)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
