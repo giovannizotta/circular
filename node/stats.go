@@ -11,7 +11,6 @@ import (
 
 type Stats struct {
 	GraphStats *graph.Stats                `json:"graph_stats"`
-	Peers      map[string]*glightning.Peer `json:"peers"`
 	Successes  []glightning.SendPaySuccess `json:"successes"`
 	Failures   []glightning.SendPayFailure `json:"failures"`
 	Routes     []graph.PrettyRoute         `json:"routes"`
@@ -51,7 +50,6 @@ func (n *Node) GetStats() *Stats {
 
 	return &Stats{
 		GraphStats: n.Graph.GetStats(),
-		Peers:      n.Peers,
 		Successes:  successes,
 		Failures:   failures,
 		Routes:     routes,
@@ -61,7 +59,6 @@ func (n *Node) GetStats() *Stats {
 func (s *Stats) String() string {
 	var result string
 	result += "Node stats:" + "\n"
-	result += "Peers: " + strconv.Itoa(len(s.Peers)) + "\n"
 	result += s.GraphStats.String() + "\n"
 	result += "successes: " + strconv.Itoa(len(s.Successes)) + "\n"
 	result += "failures: " + strconv.Itoa(len(s.Failures)) + "\n"
