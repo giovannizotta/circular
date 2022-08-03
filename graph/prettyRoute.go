@@ -16,6 +16,7 @@ type PrettyRouteHop struct {
 }
 
 type PrettyRoute struct {
+	PaymentHash      string           `json:"payment_hash"`
 	SourceId         string           `json:"source_id"`
 	DestinationId    string           `json:"destination_id"`
 	SourceAlias      string           `json:"source_alias"`
@@ -26,7 +27,7 @@ type PrettyRoute struct {
 	Hops             []PrettyRouteHop `json:"hops"`
 }
 
-func NewPrettyRoute(route *Route) *PrettyRoute {
+func NewPrettyRoute(route *Route, paymentHash string) *PrettyRoute {
 	hops := make([]PrettyRouteHop, len(route.Hops))
 
 	// now hops
@@ -58,6 +59,7 @@ func NewPrettyRoute(route *Route) *PrettyRoute {
 	}
 
 	return &PrettyRoute{
+		PaymentHash:      paymentHash,
 		SourceId:         route.Source,
 		DestinationId:    route.Destination,
 		SourceAlias:      route.Graph.GetAlias(route.Source),

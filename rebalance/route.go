@@ -32,7 +32,7 @@ func (r *Rebalance) getRoute(maxHops int) (*graph.Route, error) {
 	return route, nil
 }
 
-func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
+func (r *Rebalance) tryRoute(maxHops int) (*graph.PrettyRoute, error) {
 	paymentSecretHash, err := r.Node.GeneratePreimageHashPair()
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 		return nil, err
 	}
 
-	prettyRoute := graph.NewPrettyRoute(route)
+	prettyRoute := graph.NewPrettyRoute(route, paymentSecretHash)
 
 	// save route to DB
 	if err := r.Node.SaveToDb(node.ROUTE_PREFIX+paymentSecretHash, prettyRoute); err != nil {
@@ -61,5 +61,5 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.Route, error) {
 		return nil, util.ErrTemporaryFailure
 	}
 
-	return route, nil
+	return prettyRoute, nil
 }
