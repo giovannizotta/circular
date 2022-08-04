@@ -43,15 +43,15 @@ func NewGraph() *Graph {
 }
 
 func (g *Graph) Lock() {
-	g.adjacencyListLock.Lock()
 	g.channelsLock.Lock()
+	g.adjacencyListLock.Lock()
 	g.aliasesLock.Lock()
 }
 
 func (g *Graph) Unlock() {
 	g.aliasesLock.Unlock()
-	g.channelsLock.Unlock()
 	g.adjacencyListLock.Unlock()
+	g.channelsLock.Unlock()
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
