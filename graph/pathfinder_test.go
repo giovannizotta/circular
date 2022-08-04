@@ -4,6 +4,7 @@ import (
 	"circular/util"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"math/rand"
 	"os"
 	"testing"
 )
@@ -58,4 +59,30 @@ func TestPathfinderBasic(t *testing.T) {
 	}
 	assert.Equal(t, hops[len(hops)-1].Destination, dst)
 	assert.Equal(t, hops[0].Source, src)
+}
+
+func BenchmarkGraph_GetRoute(b *testing.B) {
+	graph, err := LoadGraphFromFile("testdata", "mainnet_graph.json")
+	if err != nil {
+		b.Fatal(err)
+	}
+	rand.Seed(69)
+
+	// get a slice of the ids of all the nodes in the graph
+	ids := make([]string, len(graph.Inbound))
+	i := 0
+	for k := range graph.Inbound {
+		ids[i] = k
+		i++
+	}
+
+	b.Run("dijkstra", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			// get random key from inbound map
+			src := ids[rand.Intn(len(ids))]
+			dst := ids[rand.Intn(len(ids))]
+			amount := uint64(rand.Intn(1000000000))
+			graph.GetRoute(src, dst, amount, nil, 10)
+		}
+	})
 }
