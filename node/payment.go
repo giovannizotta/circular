@@ -115,7 +115,7 @@ func (n *Node) OnPaymentFailure(sf *glightning.SendPayFailure) {
 
 	// TODO: handle failure codes separately: right now we treat every failure as a liquidity failure, but it might not be the case
 	n.LiquidityUpdateChan <- &LiquidityUpdate{
-		Amount:         sf.Data.MilliSatoshi - 1000000,
+		Amount:         sf.Data.MilliSatoshi - util.Min(sf.Data.MilliSatoshi, 1000000),
 		ShortChannelID: sf.Data.ErringChannel,
 		Direction:      sf.Data.ErringDirection,
 	}
