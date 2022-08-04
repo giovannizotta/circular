@@ -3,6 +3,8 @@ package graph
 import (
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -66,6 +68,15 @@ func allocate(links *map[string]map[string]Edge, from, to string) {
 func (g *Graph) AddChannel(c *Channel) {
 	allocate(&g.Inbound, c.Destination, c.Source)
 	g.Inbound[c.Destination][c.Source] = append(g.Inbound[c.Destination][c.Source], c.ShortChannelId)
+
+	if c.maxHtlcMsat == 0 {
+		maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+		c.maxHtlcMsat = maxHtlcMsat
+	}
+	if c.minHtlcMsat == 0 {
+		minHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMinimumMilliSatoshis, "msat"), 10, 64)
+		c.minHtlcMsat = minHtlcMsat
+	}
 }
 
 func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {

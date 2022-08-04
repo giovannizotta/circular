@@ -4,6 +4,7 @@ import (
 	"circular/util"
 	"container/heap"
 	"log"
+	"strings"
 )
 
 func (g *Graph) GetRoute(src, dst string, amount uint64, exclude map[string]bool, maxHops int) (*Route, error) {
@@ -82,7 +83,15 @@ func (g *Graph) dijkstra(src, dst string, amount uint64, exclude map[string]bool
 
 			// for each channel in the edge between two nodes (there may be multiple channels between two nodes)
 			for _, scid := range edge {
-				channelId := scid + "/" + util.GetDirection(v, u)
+
+				// some optimization for concatenating strings
+				var sb strings.Builder
+				sb.WriteString(scid)
+				sb.WriteString("/")
+				sb.WriteString(util.GetDirection(v, u))
+				channelId := sb.String()
+
+				//channelId := scid + "/" + util.GetDirection(v, u)
 				if _, ok := g.Channels[channelId]; !ok {
 					log.Println("channel not found:", channelId)
 					continue

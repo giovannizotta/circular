@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"strconv"
 	"strings"
@@ -12,13 +11,19 @@ type Channel struct {
 	*glightning.Channel `json:"channel"`
 	Liquidity           uint64 `json:"liquidity"`
 	Timestamp           int64  `json:"timestamp"`
+	maxHtlcMsat         uint64 `json:"-"`
+	minHtlcMsat         uint64 `json:"-"`
 }
 
 func NewChannel(channel *glightning.Channel, liquidity uint64, timestamp int64) *Channel {
+	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(channel.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+	minHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(channel.HtlcMinimumMilliSatoshis, "msat"), 10, 64)
 	return &Channel{
-		Channel:   channel,
-		Liquidity: liquidity,
-		Timestamp: timestamp,
+		Channel:     channel,
+		Liquidity:   liquidity,
+		Timestamp:   timestamp,
+		maxHtlcMsat: maxHtlcMsat,
+		minHtlcMsat: minHtlcMsat,
 	}
 }
 
@@ -56,15 +61,10 @@ func (c *Channel) GetDirection() uint8 {
 }
 
 func (c *Channel) CanForward(amount uint64) bool {
-	maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
-	minHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMinimumMilliSatoshis, "msat"), 10, 64)
-	conditions := []bool{
-		c.Liquidity >= amount,
-		c.IsActive,
-		maxHtlcMsat >= amount,
-		minHtlcMsat <= amount,
-	}
-	return util.All(conditions)
+	return c.IsActive &&
+		c.Liquidity >= amount &&
+		c.maxHtlcMsat >= amount &&
+		c.minHtlcMsat <= amount
 }
 
 func (c *Channel) ResetLiquidity() {
