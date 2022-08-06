@@ -101,7 +101,6 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.Logln(glightning.Debug, "setting up cronjobs")
 	n.setupCronJobs(options)
 
-	n.Logln(glightning.Debug, n.GetStats().String())
 	n.Logln(glightning.Info, "node initialized")
 }
 

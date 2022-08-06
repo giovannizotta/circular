@@ -10,20 +10,23 @@ import (
 )
 
 const (
-	LIQUIDITY_REFRESH_INTERVAL = 10
+	LIQUIDITY_REFRESH_INTERVAL = 10 // minutes
 )
 
 func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 	c := cron.New()
 
+	// every 10 minutes by default, refresh the information gathered via gossip
 	addCronJob(c, strconv.Itoa(options["circular-graph-refresh"].GetValue().(int))+"m", func() {
 		n.refreshGraph()
 	})
 
+	// every 30 seconds by default, refresh peers
 	addCronJob(c, strconv.Itoa(options["circular-peer-refresh"].GetValue().(int))+"s", func() {
 		n.refreshPeers()
 	})
 
+	// every 10 minutes by default, check if there are channels that need to be reset
 	addCronJob(c, strconv.Itoa(LIQUIDITY_REFRESH_INTERVAL)+"m", func() {
 		n.refreshLiquidity()
 	})

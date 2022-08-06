@@ -34,9 +34,9 @@ This plugin is dynamic, meaning that you can start and stop it via the CLI. For 
 
 The executable that you have just built is called `circular`.
 The startup options are:
-* `circular-graph-refresh`: How often the graph is refreshed in minutes. Default is 10.
-* `circular-peer-refresh`: How often the list of peers is refreshed in seconds. Default is 30.
-* `circular-liquidity-refresh`: Period of time after which we consider a liquidity belief not valid anymore in minutes. Default is 300.
+* `circular-graph-refresh` (**minutes**): How often the graph is refreshed. Default is 10.
+* `circular-peer-refresh` (**seconds**): How often the list of peers is refreshed . Default is 30.
+* `circular-liquidity-refresh` (**minutes**)s: Period of time after which we consider a liquidity belief not valid anymore. Default is 300.
 
 ## Usage
 There are two options for running a circular rebalance at the moment:
