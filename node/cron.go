@@ -11,7 +11,6 @@ import (
 
 const (
 	LIQUIDITY_REFRESH_INTERVAL = 10
-	STATS_REFRESH_INTERVAL     = 10
 )
 
 func (n *Node) setupCronJobs(options map[string]glightning.Option) {
@@ -27,10 +26,6 @@ func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 
 	addCronJob(c, strconv.Itoa(LIQUIDITY_REFRESH_INTERVAL)+"m", func() {
 		n.refreshLiquidity()
-	})
-
-	addCronJob(c, strconv.Itoa(STATS_REFRESH_INTERVAL)+"m", func() {
-		n.Logln(glightning.Info, n.GetStats().String())
 	})
 
 	c.Start()
