@@ -16,6 +16,7 @@ It features a custom pathfinding algorithm that remembers liquidity information 
 * `circular-node`: Rebalance a channel by node id
 * `circular-parallel`: Rebalance a channel using many channels as source in parallel
 * `circular-stats`: Get stats about the usage of the plugin
+* `circular-delete-stats`: Delete stats about the usage of the plugin
 
 Detailed explanation of the endpoints follows in the Usage section.
 

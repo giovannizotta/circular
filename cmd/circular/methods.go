@@ -23,9 +23,14 @@ func registerMethods(p *glightning.Plugin) {
 	rpcRebalanceParallel.Category = "utility"
 	p.RegisterMethod(rpcRebalanceParallel)
 
-	rpcStats := glightning.NewRpcMethod(&node.Stats{}, "Stats")
+	rpcStats := glightning.NewRpcMethod(&node.Stats{}, "Get stats")
 	rpcStats.LongDesc = "Get the stats of the usage of circular"
 	rpcStats.Category = "utility"
 	p.RegisterMethod(rpcStats)
+
+	deleteStats := glightning.NewRpcMethod(&node.DeleteStats{}, "Delete Stats")
+	deleteStats.LongDesc = "Delete the stats of the usage of circular"
+	deleteStats.Category = "utility"
+	p.RegisterMethod(deleteStats)
 
 }

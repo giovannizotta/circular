@@ -144,3 +144,36 @@ func (s *Store) ListRoutes() ([]graph.PrettyRoute, error) {
 	}
 	return result, nil
 }
+
+func (s *Store) DeleteRoutes() (int, error) {
+	return s.DeletePrefix(ROUTE_PREFIX)
+}
+
+func (s *Store) DeleteSuccesses() (int, error) {
+	return s.DeletePrefix(SUCCESS_PREFIX)
+}
+
+func (s *Store) DeleteFailures() (int, error) {
+	return s.DeletePrefix(FAILURE_PREFIX)
+}
+
+func (s *Store) DeletePrefix(prefix string) (int, error) {
+	count := 0
+	err := s.db.Update(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		for it.Seek([]byte(prefix)); it.ValidForPrefix([]byte(prefix)); it.Next() {
+			item := it.Item()
+			count++
+			err := txn.Delete(item.Key())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
