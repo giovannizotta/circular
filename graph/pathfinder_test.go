@@ -77,7 +77,7 @@ func BenchmarkGraph_GetRoute(b *testing.B) {
 		i++
 	}
 
-	inputs := make([]int, 6)
+	inputs := make([]int, 0)
 	for i := 3; i <= 8; i++ {
 		inputs = append(inputs, i)
 	}
