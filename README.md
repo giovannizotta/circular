@@ -32,6 +32,10 @@ go build -o circular cmd/circular/*.go
 This plugin is dynamic, meaning that you can start and stop it via the CLI. For general plugin installation instructions see [How to install a plugin](https://github.com/lightningd/plugins/blob/master/README.md#Installation).
 
 The executable that you have just built is called `circular`.
+The startup options are:
+* `circular-graph-refresh`: How often the graph is refreshed in minutes. Default is 10.
+* `circular-peer-refresh`: How often the list of peers is refreshed in seconds. Default is 30.
+* `circular-liquidity-refresh`: Period of time after which we consider a liquidity belief not valid anymore in minutes. Default is 300.
 
 ## Usage
 There are two options for running a circular rebalance at the moment:
@@ -92,6 +96,40 @@ This command will return the following stats:
 * `successes`: successful rebalances done by `circular`
 * `failures`: failed rebalances done by `circular`
 * `routes`: routes taken by `circular`
+
+## Benchmarks
+Here is the performance of the pathfinding algorithm on the mainnet lightning network graph as of August 2022 (about 16000 nodes and 80000 channels). The benchmarks consist in finding a route between two random nodes and measuring the time it takes to find the route. Different values of `maxhops` are tested to show that shorter routes take less time to compute. Those routes are preferred by `circular`, since the longer the route, the most likely it is to fail.
+
+On a laptop:
+```bash
+goos: linux
+goarch: amd64
+cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+
+30 runs sampled
+name                                 time/op
+Graph_GetRoute/dijkstra_3_maxhops-8  2.44ms ± 2%
+Graph_GetRoute/dijkstra_4_maxhops-8  3.25ms ± 5%
+Graph_GetRoute/dijkstra_5_maxhops-8  6.57ms ± 5%
+Graph_GetRoute/dijkstra_6_maxhops-8  10.6ms ± 5%
+Graph_GetRoute/dijkstra_7_maxhops-8  14.6ms ±10%
+Graph_GetRoute/dijkstra_8_maxhops-8  17.6ms ± 7%
+```
+
+On a Raspberry Pi 4:
+```bash
+goos: linux
+goarch: arm64
+
+30 runs sampled
+name                                 time/op
+Graph_GetRoute/dijkstra_3_maxhops-4  20.4ms ± 1%
+Graph_GetRoute/dijkstra_4_maxhops-4  23.3ms ± 2%
+Graph_GetRoute/dijkstra_5_maxhops-4  36.0ms ± 3%
+Graph_GetRoute/dijkstra_6_maxhops-4  52.3ms ± 6%
+Graph_GetRoute/dijkstra_7_maxhops-4  67.3ms ± 7%
+Graph_GetRoute/dijkstra_8_maxhops-4  78.0ms ± 8%
+```
 
 ## Contributing
 If you have any problems feel free to open an issue or join our [Telegram group](https://t.me/+u_R8kAfpSJBjMjI0). Pull requests are welcome as well.
