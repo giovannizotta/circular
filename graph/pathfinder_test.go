@@ -3,6 +3,7 @@ package graph
 import (
 	"circular/util"
 	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
@@ -76,14 +77,20 @@ func BenchmarkGraph_GetRoute(b *testing.B) {
 		i++
 	}
 
-	b.Run("dijkstra", func(b *testing.B) {
-		b.N = 1000
-		for i := 0; i < b.N; i++ {
-			// get random key from inbound map
-			src := ids[rand.Intn(len(ids))]
-			dst := ids[rand.Intn(len(ids))]
-			amount := uint64(rand.Intn(1000000000))
-			graph.GetRoute(src, dst, amount, nil, 10)
-		}
-	})
+	inputs := make([]int, 6)
+	for i := 3; i <= 8; i++ {
+		inputs = append(inputs, i)
+	}
+
+	for _, h := range inputs {
+		b.Run(fmt.Sprintf("dijkstra_%d_maxhops", h), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				// get random key from inbound map
+				src := ids[rand.Intn(len(ids))]
+				dst := ids[rand.Intn(len(ids))]
+				amount := uint64(rand.Intn(1000000000))
+				graph.GetRoute(src, dst, amount, nil, h)
+			}
+		})
+	}
 }
