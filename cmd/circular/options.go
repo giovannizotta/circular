@@ -28,4 +28,11 @@ func registerOptions(p *glightning.Plugin) {
 
 		log.Fatalln("error registering option circular-liquidity-reset:", err)
 	}
+
+	if err := p.RegisterNewBoolOption("circular-save-stats",
+		"Whether circular should save stats in the database",
+		true); err != nil {
+
+		log.Fatalln("error registering option circular-liquidity-reset:", err)
+	}
 }

@@ -37,6 +37,13 @@ The startup options are:
 * `circular-graph-refresh` (**minutes**): How often the graph is refreshed. Default is 10.
 * `circular-peer-refresh` (**seconds**): How often the list of peers is refreshed . Default is 30.
 * `circular-liquidity-refresh` (**minutes**)s: Period of time after which we consider a liquidity belief not valid anymore. Default is 300.
+* `circular-save-stats` (**boolean**): Whether to save stats about the usage of the plugin. Default is true. Save this to false if you are not interested in stats, as this data can grow big if you are running a lot of rebalances. You can delete the stats with the method `circular-delete-stats`.
+
+You can also set a preferred logging level.
+For example, with this startup command you would refresh the graph every 5 minutes, peers every 60 seconds, and reset liquidity on channels every 120 minutes. You would also *not* save stats and set the logging level to **DEBUG**.
+```bash
+lightningd --plugin=/path/to/circularexecutable --circular-graph-refresh=5 --circular-peer-refresh=60 --circular-liquidity-refresh=120 --circular-save-stats=false --log-level=debug:plugin-circular
+```
 
 ## Usage
 There are two options for running a circular rebalance at the moment:

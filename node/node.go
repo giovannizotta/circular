@@ -27,6 +27,7 @@ type Node struct {
 	plugin              *glightning.Plugin
 	liquidityRefresh    time.Duration
 	initLock            *sync.Mutex
+	saveStats           bool
 	PeersLock           *sync.RWMutex
 	Id                  string
 	Peers               map[string]*glightning.Peer
@@ -62,6 +63,9 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.plugin = plugin
 	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
 	n.Logln(glightning.Debug, "liquidity refresh interval: ", int(n.liquidityRefresh.Minutes()), " minutes")
+
+	n.saveStats = options["circular-save-stats"].GetValue().(bool)
+	n.Logln(glightning.Debug, "save stats: ", n.saveStats)
 
 	n.Logln(glightning.Info, "initializing node")
 	n.Logln(glightning.Debug, "getting ID")

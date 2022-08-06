@@ -86,6 +86,10 @@ func (n *Node) deleteIfOurs(paymentHash string) error {
 }
 
 func (n *Node) SaveToDb(key string, value any) error {
+	if !n.saveStats {
+		return nil
+	}
+
 	b, err := json.Marshal(value)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
