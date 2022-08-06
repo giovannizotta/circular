@@ -84,6 +84,7 @@ func BenchmarkGraph_GetRoute(b *testing.B) {
 
 	for _, h := range inputs {
 		b.Run(fmt.Sprintf("dijkstra_%d_maxhops", h), func(b *testing.B) {
+			b.N = 1000
 			for i := 0; i < b.N; i++ {
 				// get random key from inbound map
 				src := ids[rand.Intn(len(ids))]
