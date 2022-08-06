@@ -5,6 +5,8 @@
 It optimizes on **fees**, and it's designed to be used by routing nodes who do not need reliability in their payments and just want to rebalance their channels at the cheapest possible rate.
 It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments. Initially it doesn't know anything about the graph, but it will learn about it as it fails payments.
 
+`circular` makes it easy to rebalance large amounts between your channels. Pathfinding is deterministic and straightforward. When there is a payment failure, the failing channel will be marked as unusable for that kind of amount until it is refreshed. Instead, if there is a success the information doesn't change, so if you issue the same command another time it will find the same successful route thanks to determinism in pathfinding. **Shorter routes are prioritized.**
+
 ## Features
 * Lightweight
 * No invoices
@@ -36,7 +38,7 @@ The executable that you have just built is called `circular`.
 The startup options are:
 * `circular-graph-refresh` (**minutes**): How often the graph is refreshed. Default is 10.
 * `circular-peer-refresh` (**seconds**): How often the list of peers is refreshed . Default is 30.
-* `circular-liquidity-refresh` (**minutes**)s: Period of time after which we consider a liquidity belief not valid anymore. Default is 300.
+* `circular-liquidity-refresh` (**minutes**): Period of time after which we consider a liquidity belief not valid anymore. Default is 300.
 * `circular-save-stats` (**boolean**): Whether to save stats about the usage of the plugin. Default is true. Save this to false if you are not interested in stats, as this data can grow big if you are running a lot of rebalances. You can delete the stats with the method `circular-delete-stats`.
 
 You can also set a preferred logging level.
@@ -46,8 +48,6 @@ lightningd --plugin=/path/to/circularexecutable --circular-graph-refresh=5 --cir
 ```
 
 ## Usage
-There are two options for running a circular rebalance at the moment:
-
 ### Rebalance one channel at a time
 via Short Channel ID:
 ```bash
@@ -97,7 +97,7 @@ Example: you have a 10M channel and you set `depleteuptopercent` to 0.2 (20%) an
 
 ### Get stats about the usage of the plugin
 ```bash
-lightning-cli circular-stats
+lightning-cli circular-stats > stats.json
 ```
 This command will return the following stats:
 * `graph_stats`: stats about the graph that `circular` has learned
@@ -105,6 +105,7 @@ This command will return the following stats:
 * `failures`: failed rebalances done by `circular`
 * `routes`: routes taken by `circular`
 
+It's a good idea to pipe the output into a file, since it can be quite big.
 ## Benchmarks
 Here is the performance of the pathfinding algorithm on the mainnet lightning network graph as of August 2022 (about 16000 nodes and 80000 channels). The benchmarks consist in finding a route between two random nodes and measuring the time it takes to find the route. Different values of `maxhops` are tested to show that shorter routes take less time to compute. Those routes are preferred by `circular`, since the longer the route, the most likely it is to fail.
 
