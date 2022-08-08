@@ -23,6 +23,7 @@ It features a custom pathfinding algorithm that remembers liquidity information 
 Detailed explanation of the endpoints follows in the Usage section.
 
 ## Building
+You can download the `circular` binary from the releases section. Alternatively, you can build the plugin on your own.
 You need Go 1.18 or higher to build this plugin.
 
 ```bash
