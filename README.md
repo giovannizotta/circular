@@ -30,6 +30,7 @@ You need Go 1.18 or higher to build this plugin.
 git clone https://github.com/giovannizotta/circular.git
 cd circular
 go build -o circular cmd/circular/*.go
+chmod +x circular
 ```
 
 ## Running
@@ -44,6 +45,8 @@ The startup options are:
 
 You can also set a preferred logging level.
 For example, with this startup command you would refresh the graph every 5 minutes, peers every 60 seconds, and reset liquidity on channels every 120 minutes. You would also *not* save stats and set the logging level to **DEBUG**.
+
+⚠ This command is meant to be an example of how to use startup options. You should probably use a configuration file for CLN instead of starting it in this way.️
 ```bash
 lightningd --plugin=/path/to/circularexecutable --circular-graph-refresh=5 --circular-peer-refresh=60 --circular-liquidity-refresh=120 --circular-save-stats=false --log-level=debug:plugin-circular
 ```
