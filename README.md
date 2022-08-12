@@ -146,6 +146,7 @@ Graph_GetRoute/dijkstra_8_maxhops-4  78.0ms ± 8%
 
 To replicate these benchmarks on your own machine, you can use the following command:
 ```bash
+cd graph
 go test -bench=. -timeout 0 -count 30 | tee bench.txt
 
 benchstat bench.txt
