@@ -47,11 +47,12 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 			// we need to get the full error
 			var paymentError = &glightning.PaymentError{}
 			if errors.As(err, paymentError) {
-				n.Logf(glightning.Debug, "WIRE_FEE_INSUFFICIENT error: %+v", paymentError)
+				n.Logf(glightning.Info, "WIRE_FEE_INSUFFICIENT, erringNode: %s which is the %dth node", paymentError.Data.ErringNode, paymentError.Data.ErringIndex)
+				n.Logf(glightning.Info, "on route: %+v", finalRoute)
 
 				lastNode := finalRoute[len(finalRoute)-1].Id
 				if lastNode == paymentError.Data.ErringNode {
-					n.Logln(glightning.Debug, "last node is the node that caused the error")
+					n.Logln(glightning.Info, "last node is the node that caused the error")
 					return nil, util.ErrWireFeeInsufficient
 				}
 			}
