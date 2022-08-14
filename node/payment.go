@@ -55,10 +55,10 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 					n.Logf(glightning.Info, "hop %d: %+v", i, hop.Id)
 				}
 
-				lastNode := finalRoute[len(finalRoute)-1].Id
+				lastNode := finalRoute[len(finalRoute)-2].Id
 				n.Logf(glightning.Info, "lastNode: ", lastNode)
 				if lastNode == paymentError.Data.ErringNode {
-					n.Logln(glightning.Info, "last node is the node that caused the error")
+					n.Logln(glightning.Info, "WE DID IT! last node is the node that caused the error")
 					return nil, util.ErrWireFeeInsufficient
 				}
 			}
