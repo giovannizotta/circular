@@ -44,21 +44,12 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 		// in this way we make the rebalance fail if the last node changed fees, but treat
 		// WIRE_FEE_INSUFFICIENT errors along the path as a liquidity failure
 		if err.Error() == util.ErrWireFeeInsufficient.Error() {
-			n.Logf(glightning.Info, "WIRE_FEE_INSUFFICIENT error")
-			n.Logf(glightning.Info, "%+v", err)
 			// we need to get the full error
 			var paymentError *glightning.PaymentError
 			if errors.As(err, &paymentError) {
-				n.Logf(glightning.Info, "erringNode: %s which is the %dth node", paymentError.Data.ErringNode, paymentError.Data.ErringIndex)
-				n.Logf(glightning.Info, "on route:")
-				for i, hop := range finalRoute {
-					n.Logf(glightning.Info, "hop %d: %+v", i, hop.Id)
-				}
-
 				lastNode := finalRoute[len(finalRoute)-2].Id
-				n.Logf(glightning.Info, "lastNode: ", lastNode)
 				if lastNode == paymentError.Data.ErringNode {
-					n.Logln(glightning.Info, "WE DID IT! last node is the node that caused the error")
+					n.Logln(glightning.Debug, "last node is the node that caused the error")
 					return nil, util.ErrWireFeeInsufficient
 				}
 			}
