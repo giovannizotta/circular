@@ -9,9 +9,8 @@ import (
 )
 
 /* FindCandidates finds all the candidates for a rebalance going to inPeer that have fees below MaxOutPPM
- * @param inPeer the peer to find candidates for
- * @returns a list of candidates, or an error if none was found
- */
+or those in outlist.
+*/
 func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 	r.Node.PeersLock.RLock()
 	defer r.Node.PeersLock.RUnlock()
