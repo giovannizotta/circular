@@ -59,8 +59,8 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.initLock.Lock()
 	defer n.initLock.Unlock()
 
-	n.Logln(glightning.Info, "initializing node")
 	n.setOptions(lightning, plugin, options)
+	n.Logln(glightning.Info, "initializing node")
 
 	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()
