@@ -17,7 +17,6 @@ var (
 
 // This is called after the plugin starts up successfully
 func onInit(plugin *glightning.Plugin, options map[string]glightning.Option, config *glightning.Config) {
-
 	circularDir := config.LightningDir + "/" + node.CIRCULAR_DIR
 	// check if dir exists, otherwise create it
 	if _, err := os.Stat(circularDir); os.IsNotExist(err) {
@@ -35,9 +34,6 @@ func onInit(plugin *glightning.Plugin, options map[string]glightning.Option, con
 	if err := lightning.StartUp(config.RpcFile, config.LightningDir); err != nil {
 		log.Fatalln("error starting plugin: ", err)
 	}
-	log.Printf("options: %+v", options)
-	log.Printf("config: %+v", config)
-	log.Printf("plugin: %+v", plugin)
 
 	node.GetNode().Init(lightning, plugin, options, config)
 	log.Printf("circular successfully init'd!\n")

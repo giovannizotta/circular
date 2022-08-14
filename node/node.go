@@ -15,6 +15,7 @@ const (
 	CIRCULAR_DIR                     = "circular"
 	DEFAULT_PEER_REFRESH_INTERVAL    = 30  // seconds
 	DEFAULT_LIQUIDITY_RESET_INTERVAL = 300 // minutes
+	DEFAULT_RPC_TIMEOUT              = 60  // seconds
 )
 
 var (
@@ -60,27 +61,25 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	defer n.initLock.Unlock()
 
 	n.setOptions(lightning, plugin, options)
-	n.Logln(glightning.Info, "initializing node")
 
 	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("GetInfo failed in init, exiting")
 	}
 	n.Id = info.Id
-	n.Logf(glightning.Info, "Info: %+v", info)
 
 	n.Logln(glightning.Debug, "loading from file")
 	n.getGraphFromFile(err, config)
 
 	n.Logln(glightning.Debug, "refreshing graph")
 	if err = n.refreshGraph(); err != nil {
-		log.Fatalln(err)
+		log.Fatalln("RefreshGraph failed in init, exiting")
 	}
 
 	n.Logln(glightning.Debug, "refreshing peers")
 	if err = n.refreshPeers(); err != nil {
-		log.Fatalln(err)
+		log.Fatalln("RefreshPeers failed in init, exiting")
 	}
 
 	n.Logln(glightning.Debug, "opening database")
@@ -108,11 +107,15 @@ func (n *Node) getGraphFromFile(err error, config *glightning.Config) {
 func (n *Node) setOptions(lightning *glightning.Lightning, plugin *glightning.Plugin, options map[string]glightning.Option) {
 	n.lightning = lightning
 	n.plugin = plugin
+	n.Logln(glightning.Info, "initializing node")
+
 	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
 	n.Logln(glightning.Debug, "liquidity refresh interval: ", int(n.liquidityRefresh.Minutes()), " minutes")
 
 	n.saveStats = options["circular-save-stats"].GetValue().(bool)
 	n.Logln(glightning.Debug, "save stats: ", n.saveStats)
+
+	n.lightning.SetTimeout(DEFAULT_RPC_TIMEOUT)
 }
 
 func (n *Node) Logf(level glightning.LogLevel, format string, v ...any) {
