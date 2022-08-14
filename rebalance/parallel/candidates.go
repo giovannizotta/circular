@@ -48,9 +48,6 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 }
 
 func (r *RebalanceParallel) GetOutList() []*glightning.Peer {
-	r.Node.PeersLock.RLock()
-	defer r.Node.PeersLock.RUnlock()
-
 	if r.OutList == nil {
 		// if no outlist was supplied, consider all peers as potential candidates
 		return util.GetMapValues(r.Node.Peers)
@@ -120,11 +117,11 @@ func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
 	return nil, util.ErrNoCandidates
 }
 
-// put a candidate at the front of the queue
+// EnqueueCandidate puts a candidate at the front of the queue
 func (r *RebalanceParallel) EnqueueCandidate(scid string) {
 	candidate, err := r.Node.GetOutgoingChannelFromScid(scid)
 	if err != nil {
-		r.Node.Logln(glightning.Debug, err)
+		r.Node.Logln(glightning.Unusual, err)
 		return
 	}
 

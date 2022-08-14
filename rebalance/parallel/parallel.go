@@ -68,8 +68,7 @@ func (r *RebalanceParallel) Call() (jrpc2.Result, error) {
 	}
 	r.InChannel = incomingChannel
 
-	err = r.FindCandidates(r.InChannel.Source)
-	if err != nil {
+	if err = r.FindCandidates(r.InChannel.Source); err != nil {
 		return nil, err
 	}
 
@@ -78,10 +77,13 @@ func (r *RebalanceParallel) Call() (jrpc2.Result, error) {
 }
 
 func (r *RebalanceParallel) FireCandidates() {
+	r.Node.Logln(glightning.Debug, "waiting for AmountLock")
 	r.AmountLock.Lock()
+	r.Node.Logln(glightning.Debug, "got AmountLock")
+	defer r.AmountLock.Unlock()
+
 	carryOn := r.AmountRebalanced+r.InFlightAmount < r.Amount
 	splitsInFlight := int(r.InFlightAmount / r.SplitAmount)
-	r.AmountLock.Unlock()
 
 	r.Node.Logln(glightning.Debug, "Firing candidates")
 	r.Node.Logln(glightning.Debug, "AmountRebalanced: ", r.AmountRebalanced, ", InFlightAmount: ", r.InFlightAmount, ", Total Amount:", r.Amount)
@@ -95,11 +97,9 @@ func (r *RebalanceParallel) FireCandidates() {
 		}
 		r.Fire(candidate)
 
-		r.AmountLock.Lock()
 		r.InFlightAmount += r.SplitAmount
 		carryOn = r.AmountRebalanced+r.InFlightAmount < r.Amount
 		splitsInFlight = int(r.InFlightAmount / r.SplitAmount)
-		r.AmountLock.Unlock()
 
 		r.Node.Logln(glightning.Debug, "Carry on: ", carryOn, ", Splits in flight: ", splitsInFlight)
 	}
