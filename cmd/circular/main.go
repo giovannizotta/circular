@@ -35,6 +35,9 @@ func onInit(plugin *glightning.Plugin, options map[string]glightning.Option, con
 	if err := lightning.StartUp(config.RpcFile, config.LightningDir); err != nil {
 		log.Fatalln("error starting plugin: ", err)
 	}
+	log.Printf("options: %+v", options)
+	log.Printf("config: %+v", config)
+	log.Printf("plugin: %+v", plugin)
 
 	node.GetNode().Init(lightning, plugin, options, config)
 	log.Printf("circular successfully init'd!\n")

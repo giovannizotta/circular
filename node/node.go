@@ -68,6 +68,7 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 		log.Fatalln(err)
 	}
 	n.Id = info.Id
+	n.Logf(glightning.Info, "Info: %+v", info)
 
 	n.Logln(glightning.Debug, "loading from file")
 	n.getGraphFromFile(err, config)
