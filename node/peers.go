@@ -76,8 +76,6 @@ func (n *Node) GetOutgoingChannelFromScid(scid string) (*graph.Channel, error) {
 		return nil, err
 	}
 
-	n.PeersLock.RLock()
-	defer n.PeersLock.RUnlock()
 	channelId := scid + "/" + util.GetDirection(n.Id, peer.Id)
 	channel, err := n.Graph.GetChannel(channelId)
 	if err == util.ErrNoChannel {
@@ -91,9 +89,6 @@ func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	n.PeersLock.RLock()
-	defer n.PeersLock.RUnlock()
 
 	channelId := scid + "/" + util.GetDirection(peer.Id, n.Id)
 	channel, err := n.Graph.GetChannel(channelId)

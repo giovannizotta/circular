@@ -15,9 +15,6 @@ const (
 )
 
 func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChannel) error {
-	r.Node.PeersLock.RLock()
-	defer r.Node.PeersLock.RUnlock()
-
 	//validate that the channels are in normal state
 	if inChannel.State != NORMAL {
 		return util.ErrIncomingChannelNotInNormalState
@@ -37,9 +34,6 @@ func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChann
 }
 
 func (r *Rebalance) checkLiquidity(inChannel, outChannel *glightning.PeerChannel) error {
-	r.Node.PeersLock.RLock()
-	defer r.Node.PeersLock.RUnlock()
-
 	//validate that the amount is less than the liquidity of the channels
 	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
 		return util.ErrIncomingChannelDepleted
