@@ -131,21 +131,3 @@ func (n *Node) RefreshChannel(channel *graph.Channel) {
 	}
 	n.Graph.RefreshChannels(channels)
 }
-
-func (n *Node) OnConnect(c *glightning.ConnectEvent) {
-	n.PeersLock.Lock()
-	defer n.PeersLock.Unlock()
-
-	if _, ok := n.Peers[c.PeerId]; ok {
-		n.Peers[c.PeerId].Connected = true
-	}
-}
-
-func (n *Node) OnDisconnect(c *glightning.DisconnectEvent) {
-	n.PeersLock.Lock()
-	defer n.PeersLock.Unlock()
-
-	if _, ok := n.Peers[c.PeerId]; ok {
-		n.Peers[c.PeerId].Connected = false
-	}
-}
