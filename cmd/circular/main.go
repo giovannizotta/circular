@@ -32,8 +32,7 @@ func onInit(plugin *glightning.Plugin, options map[string]glightning.Option, con
 	}
 
 	lightning = glightning.NewLightning()
-	err := lightning.StartUp(config.RpcFile, config.LightningDir)
-	if err != nil {
+	if err := lightning.StartUp(config.RpcFile, config.LightningDir); err != nil {
 		log.Fatalln("error starting plugin: ", err)
 	}
 

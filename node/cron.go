@@ -47,7 +47,7 @@ func (n *Node) refreshGraph() error {
 
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
-		n.Logf(glightning.Unusual, "error listing channels: %v\n", err)
+		n.Logf(glightning.Unusual, "error listing channels: %+v", err)
 		return err
 	}
 
@@ -60,14 +60,14 @@ func (n *Node) refreshGraph() error {
 	n.Logln(glightning.Debug, "refreshing aliases")
 	nodes, err := n.lightning.ListNodes()
 	if err != nil {
-		n.Logf(glightning.Unusual, "error listing nodes: %v\n", err)
+		n.Logf(glightning.Unusual, "error listing nodes: %+v", err)
 		return err
 	}
 	n.Graph.RefreshAliases(nodes)
 
 	n.Logln(glightning.Debug, "saving graph to file")
 	if err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json"); err != nil {
-		n.Logf(glightning.Unusual, "error saving graph to file: %v\n", err)
+		n.Logf(glightning.Unusual, "error saving graph to file: %+v", err)
 		return err
 	}
 
