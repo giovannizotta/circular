@@ -59,15 +59,9 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.initLock.Lock()
 	defer n.initLock.Unlock()
 
-	n.lightning = lightning
-	n.plugin = plugin
-	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
-	n.Logln(glightning.Debug, "liquidity refresh interval: ", int(n.liquidityRefresh.Minutes()), " minutes")
-
-	n.saveStats = options["circular-save-stats"].GetValue().(bool)
-	n.Logln(glightning.Debug, "save stats: ", n.saveStats)
-
 	n.Logln(glightning.Info, "initializing node")
+	n.setOptions(lightning, plugin, options)
+
 	n.Logln(glightning.Debug, "getting ID")
 	info, err := n.lightning.GetInfo()
 	if err != nil {
@@ -76,26 +70,15 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.Id = info.Id
 
 	n.Logln(glightning.Debug, "loading from file")
-	err = n.LoadGraphFromFile(config.LightningDir+"/"+CIRCULAR_DIR, graph.FILE)
-	if err == util.ErrNoGraphToLoad {
-		// If we don't have a graph, we need to create one
-		n.Logln(glightning.Unusual, err)
-		n.Graph = graph.NewGraph()
-	} else if err != nil {
-		// If we have an error, we're in trouble
-		n.Logln(glightning.Unusual, err)
-		log.Fatalln(err)
-	}
+	n.getGraphFromFile(err, config)
 
 	n.Logln(glightning.Debug, "refreshing graph")
-	err = n.refreshGraph()
-	if err != nil {
+	if err = n.refreshGraph(); err != nil {
 		log.Fatalln(err)
 	}
 
 	n.Logln(glightning.Debug, "refreshing peers")
-	err = n.refreshPeers()
-	if err != nil {
+	if err = n.refreshPeers(); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -106,6 +89,29 @@ func (n *Node) Init(lightning *glightning.Lightning, plugin *glightning.Plugin, 
 	n.setupCronJobs(options)
 
 	n.Logln(glightning.Info, "node initialized")
+}
+
+func (n *Node) getGraphFromFile(err error, config *glightning.Config) {
+	err = n.LoadGraphFromFile(config.LightningDir+"/"+CIRCULAR_DIR, graph.FILE)
+	if err == util.ErrNoGraphToLoad {
+		// If we don't have a graph, we need to create one
+		n.Logln(glightning.Unusual, err)
+		n.Graph = graph.NewGraph()
+	} else if err != nil {
+		// If we have an error, we're in trouble
+		n.Logln(glightning.Unusual, err)
+		log.Fatalln(err)
+	}
+}
+
+func (n *Node) setOptions(lightning *glightning.Lightning, plugin *glightning.Plugin, options map[string]glightning.Option) {
+	n.lightning = lightning
+	n.plugin = plugin
+	n.liquidityRefresh = time.Duration(options["circular-liquidity-refresh"].GetValue().(int)) * time.Minute
+	n.Logln(glightning.Debug, "liquidity refresh interval: ", int(n.liquidityRefresh.Minutes()), " minutes")
+
+	n.saveStats = options["circular-save-stats"].GetValue().(bool)
+	n.Logln(glightning.Debug, "save stats: ", n.saveStats)
 }
 
 func (n *Node) Logf(level glightning.LogLevel, format string, v ...any) {

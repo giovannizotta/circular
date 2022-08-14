@@ -43,6 +43,7 @@ func addCronJob(c *cron.Cron, interval string, f func()) {
 
 func (n *Node) refreshGraph() error {
 	defer util.TimeTrack(time.Now(), "node.refreshGraph", n.Logf)
+	n.Logln(glightning.Info, "refreshing graph")
 
 	channelList, err := n.lightning.ListChannels()
 	if err != nil {
@@ -65,18 +66,19 @@ func (n *Node) refreshGraph() error {
 	n.Graph.RefreshAliases(nodes)
 
 	n.Logln(glightning.Debug, "saving graph to file")
-	err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json")
-	if err != nil {
+	if err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json"); err != nil {
 		n.Logf(glightning.Unusual, "error saving graph to file: %v\n", err)
 		return err
 	}
+
+	n.Logln(glightning.Info, "graph has been refreshed")
 	return nil
 }
 
 func (n *Node) refreshPeers() error {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers", n.Logf)
-
 	n.Logln(glightning.Debug, "refreshing peers")
+
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
