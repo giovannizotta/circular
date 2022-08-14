@@ -48,7 +48,7 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 			n.Logf(glightning.Info, "%+v", err)
 			// we need to get the full error
 			var paymentError *glightning.PaymentError
-			if errors.As(err, paymentError) {
+			if errors.As(err, &paymentError) {
 				n.Logf(glightning.Info, "erringNode: %s which is the %dth node", paymentError.Data.ErringNode, paymentError.Data.ErringIndex)
 				n.Logf(glightning.Info, "on route: %+v", finalRoute)
 
