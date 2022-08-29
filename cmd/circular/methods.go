@@ -18,10 +18,15 @@ func registerMethods(p *glightning.Plugin) {
 	rpcRebalanceByScid.Category = "utility"
 	p.RegisterMethod(rpcRebalanceByScid)
 
-	rpcRebalanceParallel := glightning.NewRpcMethod(&parallel.RebalanceParallel{}, "Rebalance in parallel")
-	rpcRebalanceParallel.LongDesc = "Rebalance the channel `inchannel` from many channels concurrently"
-	rpcRebalanceParallel.Category = "utility"
-	p.RegisterMethod(rpcRebalanceParallel)
+	rpcRebalancePull := glightning.NewRpcMethod(&parallel.RebalancePull{}, "Pull liquidity into a channel from many sources in parallel")
+	rpcRebalancePull.LongDesc = "Rebalance the channel `inscid` from many channels concurrently"
+	rpcRebalancePull.Category = "utility"
+	p.RegisterMethod(rpcRebalancePull)
+
+	rpcRebalancePush := glightning.NewRpcMethod(&parallel.RebalancePush{}, "Push liquidity out of a channel to many destinations in parallel")
+	rpcRebalancePush.LongDesc = "Rebalance the channel `outscid` from many channels concurrently"
+	rpcRebalancePush.Category = "utility"
+	p.RegisterMethod(rpcRebalancePush)
 
 	rpcStats := glightning.NewRpcMethod(&node.Stats{}, "Get stats")
 	rpcStats.LongDesc = "Get the stats of the usage of circular"

@@ -98,14 +98,20 @@ func (n *Node) GetIncomingChannelFromScid(scid string) (*graph.Channel, error) {
 	return channel, err
 }
 
-func (n *Node) UpdateChannelBalance(outPeer, scid string, amount uint64) {
+func (n *Node) UpdateChannelBalance(outPeer, inPeer, outScid, inScid string, amount uint64) {
 	n.PeersLock.Lock()
 	defer n.PeersLock.Unlock()
 
 	for _, channel := range n.Peers[outPeer].Channels {
-		if channel.ShortChannelId == scid {
+		if channel.ShortChannelId == outScid {
 			channel.MilliSatoshiToUs -= amount * 1000
-			return
+			break
+		}
+	}
+	for _, channel := range n.Peers[inPeer].Channels {
+		if channel.ShortChannelId == inScid {
+			channel.MilliSatoshiToUs += amount * 1000
+			break
 		}
 	}
 }

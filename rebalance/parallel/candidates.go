@@ -2,37 +2,32 @@ package parallel
 
 import (
 	"circular/graph"
-	"circular/rebalance"
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
 	"github.com/gammazero/deque"
 )
 
-/* FindCandidates finds all the candidates for a rebalance going to inPeer that have fees below MaxOutPPM
-or those in outlist.
-*/
-func (r *RebalanceParallel) FindCandidates(inPeer string) error {
+func (r *AbstractRebalance) FindCandidates(exclude string) error {
 	r.Node.PeersLock.RLock()
 	defer r.Node.PeersLock.RUnlock()
 
-	peers := r.GetOutList()
+	r.Node.Logln(glightning.Debug, "Looking for candidates")
+	peers := r.GetCandidatesList()
 
 	r.Candidates = deque.New[*graph.Channel]()
-	for _, peer := range peers {
-		if peer.Id == inPeer {
+	for _, p := range peers {
+		if p.Id == exclude {
 			continue
 		}
 
-		direction := util.GetDirection(r.Node.Id, peer.Id)
-		for _, peerChannel := range peer.Channels {
+		direction := r.GetCandidateDirection(p.Id)
+		for _, peerChannel := range p.Channels {
 			channel, err := r.Node.GetGraphChannelFromPeerChannel(peerChannel, direction)
 			if err != nil {
 				continue
 			}
 			// let's see if this channel is a candidate
-			r.Node.Logln(glightning.Debug, "checking channel:", channel.ShortChannelId)
-			r.Node.Logln(glightning.Debug, "feePPM: ", channel.ComputeFeePPM(r.SplitAmount))
-			if channel.ComputeFeePPM(r.SplitAmount) < r.MaxOutPPM {
+			if r.IsGoodCandidate(channel) {
 				r.Node.Logln(glightning.Debug, "adding channel to candidates:", channel.ShortChannelId)
 				r.Candidates.PushBack(channel)
 			}
@@ -46,50 +41,28 @@ func (r *RebalanceParallel) FindCandidates(inPeer string) error {
 	return nil
 }
 
-func (r *RebalanceParallel) GetOutList() []*glightning.Peer {
-	if r.OutList == nil {
-		// if no outlist was supplied, consider all peers as potential candidates
+func (r *AbstractRebalance) GetCandidatesList() []*glightning.Peer {
+	if r.CandidatesList == nil {
+		// if no CandidatesList was supplied, consider all peers as potential candidates
 		return util.GetMapValues(r.Node.Peers)
 	} else {
-		// if an outlist was supplied, consider only the peers in the outlist as potential candidates
+		// if a CandidatesList was supplied, consider only the peers in the CandidatesList as potential candidates
 		result := make([]*glightning.Peer, 0)
-		for _, peer := range r.OutList {
+		for _, peer := range r.CandidatesList {
 			if _, ok := r.Node.Peers[peer]; ok {
 				result = append(result, r.Node.Peers[peer])
 			} else {
-				r.Node.Logln(glightning.Unusual, "peer in outlist does not exist: ", peer)
+				r.Node.Logln(glightning.Unusual, "peer in CandidatesList does not exist: ", peer)
 			}
 		}
 
-		// if an outlist was supplied, ignore maxoutppm. To do this we put it to "infinity"
-		r.MaxOutPPM = 1 << 63
-		r.Node.Logln(glightning.Debug, "using outlist: ", r.OutList, " maxoutppm:", r.MaxOutPPM)
+		r.Node.Logln(glightning.Debug, "using CandidatesList: ", r.CandidatesList)
 
 		return result
 	}
 }
 
-func (r *RebalanceParallel) canUseChannel(channel *glightning.PeerChannel) error {
-	// check that the channel is not under the deplete threshold
-	depleteAmount := util.Min(r.DepleteUpToAmount,
-		uint64(float64(channel.MilliSatoshiTotal)*r.DepleteUpToPercent))
-	r.Node.Logln(glightning.Debug, "depleteAmount:", depleteAmount)
-	if channel.MilliSatoshiToUs < depleteAmount {
-		return util.ErrChannelDepleted
-	}
-
-	if channel.State != rebalance.NORMAL {
-		return util.ErrChannelNotInNormalState
-	}
-
-	if r.Node.IsPeerConnected(channel) == false {
-		return util.ErrOutgoingPeerDisconnected
-	}
-
-	return nil
-}
-
-func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
+func (r *AbstractRebalance) GetNextCandidate() (*graph.Channel, error) {
 	var candidate *graph.Channel
 	r.Node.Logln(glightning.Debug, "getting next candidate")
 	for r.Candidates.Len() > 0 {
@@ -106,7 +79,7 @@ func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
 		}
 
 		// check if we can use the channel
-		if err := r.canUseChannel(peerChannel); err != nil {
+		if err := r.CanUseChannel(peerChannel); err != nil {
 			r.Node.Logln(glightning.Debug, "channel not usable:", err)
 			continue
 		}
@@ -116,15 +89,29 @@ func (r *RebalanceParallel) GetNextCandidate() (*graph.Channel, error) {
 	return nil, util.ErrNoCandidates
 }
 
-// EnqueueCandidate puts a candidate at the front of the queue
-func (r *RebalanceParallel) EnqueueCandidate(scid string) {
-	candidate, err := r.Node.GetOutgoingChannelFromScid(scid)
-	if err != nil {
-		r.Node.Logln(glightning.Unusual, err)
-		return
-	}
+func (r *AbstractRebalance) FireCandidates() {
+	r.AmountLock.Lock()
+	defer r.AmountLock.Unlock()
 
-	r.QueueLock.Lock()
-	r.Candidates.PushFront(candidate)
-	r.QueueLock.Unlock()
+	carryOn := r.AmountRebalanced+r.InFlightAmount < r.amount
+	splitsInFlight := int(r.InFlightAmount / r.splitAmount)
+
+	r.Node.Logln(glightning.Debug, "Firing candidates")
+	r.Node.Logln(glightning.Debug, "AmountRebalanced: ", r.AmountRebalanced, ", InFlightAmount: ", r.InFlightAmount, ", Total amount:", r.amount)
+	r.Node.Logln(glightning.Debug, "Carry on: ", carryOn, ", splits in flight: ", splitsInFlight)
+	for carryOn && splitsInFlight < r.splits {
+		candidate, err := r.GetNextCandidate()
+		if err != nil {
+			// no candidate left
+			r.Node.Logln(glightning.Debug, err)
+			break
+		}
+		r.Fire(candidate)
+
+		r.InFlightAmount += r.splitAmount
+		carryOn = r.AmountRebalanced+r.InFlightAmount < r.amount
+		splitsInFlight = int(r.InFlightAmount / r.splitAmount)
+
+		r.Node.Logln(glightning.Debug, "Carry on: ", carryOn, ", splits in flight: ", splitsInFlight)
+	}
 }

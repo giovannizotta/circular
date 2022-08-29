@@ -44,6 +44,7 @@ var (
 	ErrNoChannel               = errors.New("no channel")
 	ErrNoCandidates            = errors.New("no candidates")
 	ErrChannelDepleted         = errors.New("channel is depleted")
+	ErrChannelFilled           = errors.New("channel is filled")
 	ErrIncomingChannelDepleted = errors.New("incoming channel does not have enough remote balance")
 	ErrOutgoingChannelDepleted = errors.New("outgoing channel does not have enough local balance")
 
