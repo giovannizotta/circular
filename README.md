@@ -14,9 +14,10 @@ It features a custom pathfinding algorithm that remembers liquidity information 
 * Usage data is stored in the database
 
 ## Endpoints
+* `circular-pull`: Pull liquidity into a channel using many channels as sources in parallel
+* `circular-push`: Push liquidity out of a channel using many channels as destinations in parallel
 * `circular`: Rebalance a channel by scid
 * `circular-node`: Rebalance a channel by node id
-* `circular-parallel`: Rebalance a channel using many channels as source in parallel
 * `circular-stats`: Get stats about the usage of the plugin
 * `circular-delete-stats`: Delete stats about the usage of the plugin
 
@@ -73,13 +74,13 @@ Optional parameters:
 * `attempts`(default=1) is the number of payment attempts that will be made once a path is found
 * `maxhops`(default=8) is the maximum number of hops that a path is allowed to have
 
-### Rebalance a channel from many sources in parallel
+### Pull liquidity into a channel from many sources in parallel
 ```bash
-lightning-cli circular-parallel -k inscid=123456x1x1 amount=500000 splits=5 splitamount=20000 maxppm=10 maxoutppm=50 attempts=1 maxhops=8 depleteuptopercent=0.5 depleteuptoamount=2000000
+lightning-cli circular-pull -k inscid=123456x1x1 amount=500000 splits=5 splitamount=20000 maxppm=10 maxoutppm=50 attempts=1 maxhops=8 depleteuptopercent=0.5 depleteuptoamount=2000000
 ```
 
 Required parameters:
-* `inscid`: the Short Channel Id where you want to receive the payment.
+* `inscid`: the Short Channel Id where you want to pull liquidity.
 
 Optional parameters:
 * `amount`(sats, default=400000) is the **total** amount that you want to rebalance
@@ -89,7 +90,7 @@ Optional parameters:
 * `maxppm`(default=10), `attempts`(default=1) and `maxhops`(default=8) are the same as for the `circular` command
 * `outlist` is a JSON array of node ids that you want to use as sources. If this is specified, `maxoutppm` is ignored. An example of how to use this parameter is the following:
 ```bash
-cli circular-parallel -k inscid=123456x1x1 outlist='["03700917a25f79a3e427fe86e49b5041b583c73dd223cfa9a87cd6be5076b7b7a5", "025614be3600e9899bc044d331ab58a9fe1ccf30e75ae35943cdd11218a0a55dba"]' amount=800000 splitamount=80000 splits=4 maxppm=5000
+cli circular-pull -k inscid=123456x1x1 outlist='["03700917a25f79a3e427fe86e49b5041b583c73dd223cfa9a87cd6be5076b7b7a5", "025614be3600e9899bc044d331ab58a9fe1ccf30e75ae35943cdd11218a0a55dba"]' amount=800000 splitamount=80000 splits=4 maxppm=5000
 ```
 
 `depleteuptopercent` and `depleteuptoamount` are a bit special: 
@@ -98,6 +99,31 @@ cli circular-parallel -k inscid=123456x1x1 outlist='["03700917a25f79a3e427fe86e4
 The actual amount that is going to be left in the outgoing channels is the minimum of `depleteuptopercent` and `depleteuptoamount`.
 
 Example: you have a 10M channel and you set `depleteuptopercent` to 0.2 (20%) and `depleteuptoamount` to 1000000. The actual amount that will be left in that channel will be the minimum of 0.2 and 1000000. So in this case, at least 1000000 sats will be left in that channel.
+
+### Push liquidity out of a channel to many destinations in parallel
+**Symmetrical to `circular-pull`, but for pushing liquidity out of a channel.**
+```bash
+lightning-cli circular-push -k outscid=123456x1x1 amount=500000 splits=5 splitamount=20000 maxppm=10 minoutppm=50 attempts=1 maxhops=8 filluptopercent=0.5 filluptoamount=2000000
+```
+
+Required parameters:
+* `outscid`: the Short Channel Id from which you want to push out liquidity.
+
+Optional parameters:
+* `amount`, `splits`, `splitamount`, `maxppm`, `attempts` and `maxhops` are the same as for the `circular-pull` command.
+* `minoutppm`(default=50) is the minimum ppm charged by your node that a channel has to charge to be selected by `circular-push`. Useful to avoid rebalancing a channel to channels where you can't profit from.
+* `inlist` is a JSON array of node ids that you want to use as destinations. If this is specified, `minoutppm` is ignored. An example of how to use this parameter is the following:
+```bash
+cli circular-push -k outscid=123456x1x1 inlist='["03700917a25f79a3e427fe86e49b5041b583c73dd223cfa9a87cd6be5076b7b7a5", "025614be3600e9899bc044d331ab58a9fe1ccf30e75ae35943cdd11218a0a55dba"]' amount=800000 splitamount=80000 splits=4 maxppm=5000
+```
+
+`filluptopercent` and `filluptoamount` are a bit special:
+* `filluptopercent`(default=0.8) is a threshold percentage for the maximum amount that can stay in the incoming channels. This must be between 0 and 1.
+* `filluptoamount`(sats, default=10000000) is a value in sats for the maximum amount to leave in the incoming channels.
+  The actual amount that is going to be left in the incoming channels is the minimum of `filluptopercent` and `filluptoamount`.
+
+Example: you have a 10M channel and you set `filluptopercent` to 0.8 (80%) and `filluptoamount` to 5000000. The maximum amount that will be put in that channel will be the maximum of 0.8 and 5000000. So in this case, at most 8000000 sats will be put in that channel.
+
 
 ### Get stats about the usage of the plugin
 ```bash
