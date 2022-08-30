@@ -118,11 +118,11 @@ cli circular-push -k outscid=123456x1x1 inlist='["03700917a25f79a3e427fe86e49b50
 ```
 
 `filluptopercent` and `filluptoamount` are a bit special:
-* `filluptopercent`(default=0.8) is a threshold percentage for the maximum amount that can stay in the incoming channels. This must be between 0 and 1.
-* `filluptoamount`(sats, default=10000000) is a value in sats for the maximum amount to leave in the incoming channels.
+* `filluptopercent`(default=0.2) is a threshold percentage for the minimum amount that is allowed to stay as remote liquidity in the incoming channels. This must be between 0 and 1.
+* `filluptoamount`(sats, default=1000000) is a value in sats for the minimum amount that is allowed to stay as remote liquidity in the incoming channels.
   The actual amount that is going to be left in the incoming channels is the minimum of `filluptopercent` and `filluptoamount`.
 
-Example: you have a 10M channel and you set `filluptopercent` to 0.8 (80%) and `filluptoamount` to 5000000. The maximum amount that will be put in that channel will be the maximum of 0.8 and 5000000. So in this case, at most 8000000 sats will be put in that channel.
+Example: you have a 10M channel and you set `filluptopercent` to 0.2 (20%) and `filluptoamount` to 1000000. The minimum amount of remote liquidity that will be left in that channel will be the minimum of 0.2 and 1000000. So in this case, at least 1000000 sats will be left in that channel.
 
 
 ### Get stats about the usage of the plugin
