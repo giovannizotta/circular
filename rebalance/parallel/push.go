@@ -96,7 +96,7 @@ func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
 	}
 
 	if r.Node.IsPeerConnected(channel) == false {
-		return util.ErrOutgoingPeerDisconnected
+		return util.ErrIncomingPeerDisconnected
 	}
 
 	return nil
