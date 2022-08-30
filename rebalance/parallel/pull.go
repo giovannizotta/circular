@@ -73,7 +73,7 @@ func (r *RebalancePull) Call() (jrpc2.Result, error) {
 }
 
 func (r *RebalancePull) IsGoodCandidate(peerChannel *glightning.PeerChannel) bool {
-	// we need to get the outgoing channel from the peer to compute out outgoing PPM and check it's below the maxoutppm
+	// we need to get the outgoing channel from the peer to compute outgoing PPM and check it's below the maxoutppm
 	outgoingChannel, err := r.Node.GetOutgoingChannelFromScid(peerChannel.ShortChannelId)
 	if err != nil {
 		r.Node.Logln(glightning.Unusual, err)
