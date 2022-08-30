@@ -10,7 +10,7 @@ import (
 )
 
 type RebalanceMethods interface {
-	IsGoodCandidate(candidate *graph.Channel) bool
+	IsGoodCandidate(peerChannel *glightning.PeerChannel) bool
 	CanUseChannel(channel *glightning.PeerChannel) error
 	Fire(candidate *graph.Channel)
 	EnqueueCandidate(result *rebalance2.Result)

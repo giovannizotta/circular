@@ -20,16 +20,18 @@ func (r *AbstractRebalance) FindCandidates(exclude string) error {
 			continue
 		}
 
-		direction := r.GetCandidateDirection(p.Id)
 		for _, peerChannel := range p.Channels {
-			channel, err := r.Node.GetGraphChannelFromPeerChannel(peerChannel, direction)
-			if err != nil {
-				continue
-			}
 			// let's see if this channel is a candidate
-			if r.IsGoodCandidate(channel) {
-				r.Node.Logln(glightning.Debug, "adding channel to candidates:", channel.ShortChannelId)
-				r.Candidates.PushBack(channel)
+			if r.IsGoodCandidate(peerChannel) {
+				direction := r.GetCandidateDirection(p.Id)
+				candidate, err := r.Node.GetGraphChannelFromPeerChannel(peerChannel, direction)
+				if err != nil {
+					r.Node.Logln(glightning.Unusual, err)
+					continue
+				}
+
+				r.Node.Logln(glightning.Debug, "adding candidate to candidates:", candidate.ShortChannelId)
+				r.Candidates.PushBack(candidate)
 			}
 		}
 	}

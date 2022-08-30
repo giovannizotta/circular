@@ -72,8 +72,15 @@ func (r *RebalancePull) Call() (jrpc2.Result, error) {
 	return r.WaitForResult()
 }
 
-func (r *RebalancePull) IsGoodCandidate(candidate *graph.Channel) bool {
-	return candidate.ComputeFeePPM(r.splitAmount) < r.MaxOutPPM
+func (r *RebalancePull) IsGoodCandidate(peerChannel *glightning.PeerChannel) bool {
+	// we need to get the outgoing channel from the peer to compute out outgoing PPM and check it's below the maxoutppm
+	outgoingChannel, err := r.Node.GetOutgoingChannelFromScid(peerChannel.ShortChannelId)
+	if err != nil {
+		r.Node.Logln(glightning.Unusual, err)
+		return false
+	}
+
+	return outgoingChannel.ComputeFeePPM(r.splitAmount) < r.MaxOutPPM
 }
 
 // Check that the channel is not under the deplete threshold and connection is active

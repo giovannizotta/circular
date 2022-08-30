@@ -71,8 +71,15 @@ func (r *RebalancePush) Call() (jrpc2.Result, error) {
 	return r.WaitForResult()
 }
 
-func (r *RebalancePush) IsGoodCandidate(candidate *graph.Channel) bool {
-	return candidate.ComputeFeePPM(r.splitAmount) > r.MinOutPPM
+func (r *RebalancePush) IsGoodCandidate(peerChannel *glightning.PeerChannel) bool {
+	// we need to get the outgoing channel from the peer to compute out outgoing PPM and check it's above the minoutppm
+	outgoingChannel, err := r.Node.GetOutgoingChannelFromScid(peerChannel.ShortChannelId)
+	if err != nil {
+		r.Node.Logln(glightning.Unusual, err)
+		return false
+	}
+
+	return outgoingChannel.ComputeFeePPM(r.splitAmount) > r.MinOutPPM
 }
 
 func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
