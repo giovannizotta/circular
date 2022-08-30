@@ -113,7 +113,7 @@ func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
 }
 
 func (r *RebalancePush) Fire(candidate *graph.Channel) {
-	r.Node.Logln(glightning.Info, "Firing candidate: ", candidate.ShortChannelId)
+	r.Node.Logln(glightning.Debug, "Firing candidate: ", candidate.ShortChannelId, " for attempts: ", r.attempts)
 	rebalance := rebalance2.NewRebalance(r.TargetChannel, candidate, r.splitAmount, r.maxPPM, r.attempts, r.maxHops)
 
 	go func() {
