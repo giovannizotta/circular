@@ -79,7 +79,7 @@ func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
 	// check that the channel is not over the fill threshold
 	fillAmount := util.Min(r.FillUpToAmount,
 		uint64(float64(channel.MilliSatoshiTotal)*r.FillUpToPercent))
-	r.Node.Logln(glightning.Debug, "fillAmount:", fillAmount)
+	r.Node.Logln(glightning.Info, "fillAmount:", fillAmount)
 	if channel.MilliSatoshiToUs < fillAmount {
 		return util.ErrChannelFilled
 	}
@@ -96,7 +96,7 @@ func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
 }
 
 func (r *RebalancePush) Fire(candidate *graph.Channel) {
-	r.Node.Logln(glightning.Debug, "Firing candidate: ", candidate.ShortChannelId, " for attempts: ", r.attempts)
+	r.Node.Logln(glightning.Info, "Firing candidate: ", candidate.ShortChannelId)
 	rebalance := rebalance2.NewRebalance(r.TargetChannel, candidate, r.splitAmount, r.maxPPM, r.attempts, r.maxHops)
 
 	go func() {
