@@ -163,3 +163,13 @@ func (r *RebalancePush) EnqueueCandidate(result *rebalance2.Result) {
 	r.Candidates.PushFront(candidate)
 	r.QueueLock.Unlock()
 }
+
+func (r *RebalancePush) AddSuccess(result *rebalance2.Result) {
+	r.Node.Graph.LockAliases()
+	defer r.Node.Graph.UnlockAliases()
+	alias := "unknown"
+	if a, ok := r.Node.Graph.Aliases[result.In]; ok {
+		alias = a
+	}
+	r.AddSuccessGeneric(alias, result.PPM, result.Amount)
+}

@@ -15,6 +15,7 @@ type RebalanceMethods interface {
 	Fire(candidate *graph.Channel)
 	EnqueueCandidate(result *rebalance2.Result)
 	GetCandidateDirection(id string) string
+	AddSuccess(result *rebalance2.Result)
 }
 
 type AbstractRebalance struct {
@@ -28,6 +29,7 @@ type AbstractRebalance struct {
 	QueueLock           *sync.Mutex
 	RebalanceResultChan chan *rebalance2.Result
 	CandidatesList      []string
+	Result              *Result
 	amount              uint64
 	maxPPM              uint64
 	splits              int

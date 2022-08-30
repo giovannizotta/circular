@@ -28,22 +28,20 @@ func NewResult(target uint64) *Result {
 	}
 }
 
-func (r *Result) AddSuccess(result *rebalance.Result, aliases map[string]string) {
-	r.RebalancedAmount += result.Amount
-	alias := aliases[result.Out]
-	if _, ok := r.Successes[alias]; !ok {
-		r.Successes[alias] = make(map[uint64]uint64)
+func (r *AbstractRebalance) AddSuccessGeneric(alias string, ppm, amount uint64) {
+	r.Result.RebalancedAmount += amount
+	if _, ok := r.Result.Successes[alias]; !ok {
+		r.Result.Successes[alias] = make(map[uint64]uint64)
 	}
-	if _, ok := r.Successes[alias][result.PPM]; !ok {
-		r.Successes[alias][result.PPM] = 0
+	if _, ok := r.Result.Successes[alias][ppm]; !ok {
+		r.Result.Successes[alias][ppm] = 0
 	}
-
-	r.Successes[alias][result.PPM] += result.Amount
+	r.Result.Successes[alias][ppm] += amount
 }
 
 func (r *AbstractRebalance) WaitForResult() (jrpc2.Result, error) {
 	start := time.Now()
-	result := NewResult(r.amount)
+	r.Result = NewResult(r.amount)
 
 	// while there's something inflight, wait for results
 	for r.InFlightAmount > 0 {
@@ -56,7 +54,7 @@ func (r *AbstractRebalance) WaitForResult() (jrpc2.Result, error) {
 			r.Node.Logf(glightning.Info, "Successful rebalance: %+v", rebalanceResult)
 
 			// update results data
-			result.AddSuccess(rebalanceResult, r.Node.Graph.Aliases)
+			r.AddSuccess(rebalanceResult)
 
 			// put the candidate back in front of the queue
 			r.EnqueueCandidate(rebalanceResult)
@@ -72,9 +70,9 @@ func (r *AbstractRebalance) WaitForResult() (jrpc2.Result, error) {
 	}
 
 	// rebalance is over
-	result.Attempts = r.TotalAttempts
-	result.Time = fmt.Sprintf("%.3fs", float64(time.Since(start).Milliseconds())/1000)
-	return result, nil
+	r.Result.Attempts = r.TotalAttempts
+	r.Result.Time = fmt.Sprintf("%.3fs", float64(time.Since(start).Milliseconds())/1000)
+	return r.Result, nil
 }
 
 func (r *AbstractRebalance) UpdateAmounts(result *rebalance.Result) {

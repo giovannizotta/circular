@@ -56,6 +56,14 @@ func (g *Graph) Unlock() {
 	g.channelsLock.Unlock()
 }
 
+func (g *Graph) LockAliases() {
+	g.aliasesLock.Lock()
+}
+
+func (g *Graph) UnlockAliases() {
+	g.aliasesLock.Unlock()
+}
+
 func allocate(links *map[string]map[string]Edge, from, to string) {
 	if (*links)[from] == nil {
 		(*links)[from] = make(map[string]Edge)
