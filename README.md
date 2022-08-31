@@ -136,6 +136,8 @@ This command will return the following stats:
 * `routes`: routes taken by `circular`
 
 It's a good idea to pipe the output into a file, since it can be quite big.
+⚠ To limit the size, `circular` will only keep the last 14 days of stats.
+
 ## Benchmarks
 Here is the performance of the pathfinding algorithm on the mainnet lightning network graph as of August 2022 (about 16000 nodes and 80000 channels). The benchmarks consist in finding a route between two random nodes and measuring the time it takes to find the route. Different values of `maxhops` are tested to show that shorter routes take less time to compute. Those routes are preferred by `circular`, since the longer the route, the most likely it is to fail.
 
