@@ -3,7 +3,6 @@ package node
 import (
 	"circular/graph"
 	"circular/util"
-	"encoding/json"
 	"errors"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/elementsproject/glightning/glightning"
@@ -92,26 +91,6 @@ func (n *Node) deleteIfOurs(paymentHash string) error {
 	}
 
 	err = n.DB.Delete(key)
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-		return err
-	}
-
-	return nil
-}
-
-func (n *Node) SaveToDb(key string, value any) error {
-	if !n.saveStats {
-		return nil
-	}
-
-	b, err := json.Marshal(value)
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-		return err
-	}
-
-	err = n.DB.Set(key, b)
 	if err != nil {
 		n.Logln(glightning.Unusual, err)
 		return err
