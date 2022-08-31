@@ -8,9 +8,7 @@ import (
 )
 
 type DeleteStats struct {
-	Failures  int `json:"failures"`
-	Successes int `json:"successes"`
-	Routes    int `json:"routes"`
+	Status string `json:"status"`
 }
 
 func (s *DeleteStats) Name() string {
@@ -28,22 +26,15 @@ func (s *DeleteStats) Call() (jrpc2.Result, error) {
 func (n *Node) DeleteStats() *DeleteStats {
 	defer util.TimeTrack(time.Now(), "node.DeleteStats", n.Logf)
 
-	successes, err := n.DB.DeleteSuccesses()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-	failures, err := n.DB.DeleteFailures()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
-	}
-	routes, err := n.DB.DeleteRoutes()
-	if err != nil {
-		n.Logln(glightning.Unusual, err)
+	if err := n.DB.db.DropPrefix(
+		[]byte(SUCCESS_PREFIX),
+		[]byte(FAILURE_PREFIX),
+		[]byte(ROUTE_PREFIX)); err != nil {
+		n.Logf(glightning.Unusual, "Error dropping stats: %v", err)
+		return &DeleteStats{Status: "failure"}
 	}
 
 	return &DeleteStats{
-		Successes: successes,
-		Failures:  failures,
-		Routes:    routes,
+		Status: "success",
 	}
 }
