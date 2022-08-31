@@ -33,6 +33,7 @@ var (
 	ErrNoPeerChannel               = errors.New("not a peer or peer channel")
 	ErrNoSuchNode                  = errors.New("no such node")
 	ErrNoPeer                      = errors.New("no peer")
+	ErrFirstPeerNotReady           = errors.New("first peer not ready")
 
 	ErrNoGraphToLoad = errors.New("no graph to load")
 	ErrNoRoute       = errors.New("no route")

@@ -25,7 +25,7 @@ func (n *Node) SendPay(route *graph.Route, paymentHash string) (*glightning.Send
 	n.Logln(glightning.Debug, "sending payment")
 	if _, err := n.lightning.SendPayLite(finalRoute, paymentHash); err != nil {
 		n.Logln(glightning.Unusual, err)
-		return nil, err
+		return nil, util.ErrFirstPeerNotReady
 	}
 
 	n.Logln(glightning.Debug, "waiting for payment to be confirmed")

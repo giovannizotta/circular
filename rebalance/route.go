@@ -61,6 +61,9 @@ func (r *Rebalance) tryRoute(maxHops int) (*graph.PrettyRoute, error) {
 		if err == util.ErrWireFeeInsufficient {
 			return nil, err
 		}
+		if err == util.ErrFirstPeerNotReady {
+			return nil, err
+		}
 		return nil, util.ErrTemporaryFailure
 	}
 
