@@ -6,6 +6,11 @@ import (
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
+	"time"
+)
+
+const (
+	FOURTEEN_DAYS = 14 * 24 * time.Hour
 )
 
 type Store struct {
@@ -24,9 +29,10 @@ func NewDB(path string) *Store {
 	}
 }
 
+// Every key is allowed to stay in the db for at most 14 days
 func (s *Store) Set(key string, value []byte) error {
 	err := s.db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(key), value)
+		return txn.SetEntry(badger.NewEntry([]byte(key), value).WithTTL(FOURTEEN_DAYS))
 	})
 	if err != nil {
 		return err
