@@ -48,9 +48,12 @@ func (r *Rebalance) validateLiquidityParameters(out, in *graph.Channel) error {
 	r.Node.Logln(glightning.Debug, "validating liquidity parameters")
 
 	r.Node.Logln(glightning.Debug, "refreshing in and out channels")
-	// TODO: this refreshes fees, but not spendable and receivable amounts
-	r.Node.RefreshChannel(r.OutChannel)
-	r.Node.RefreshChannel(r.InChannel)
+	// We leave these two refreshes out because they cause high CPU usage for the lightningd
+	// thread due to the high amount of RPC calls generated.
+	// Their purpose was to refresh in and out channels to make sure we have updated fees, but we
+	// take the tradeoff and will refresh them anyway on the next graph refresh.
+	//r.Node.RefreshChannel(r.OutChannel)
+	//r.Node.RefreshChannel(r.InChannel)
 
 	inChannel, err := r.Node.GetPeerChannelFromGraphChannel(in)
 	if err != nil {
