@@ -31,6 +31,11 @@ func (n *Node) setupCronJobs(options map[string]glightning.Option) {
 		n.refreshLiquidity()
 	})
 
+	// every 6 hours, garbage collect the database
+	addCronJob(c, "6h", func() {
+		n.GarbageCollect()
+	})
+
 	c.Start()
 }
 
