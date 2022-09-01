@@ -33,9 +33,9 @@ func registerMethods(p *glightning.Plugin) {
 	rpcStats.Category = "utility"
 	p.RegisterMethod(rpcStats)
 
-	deleteStats := glightning.NewRpcMethod(&node.DeleteStats{}, "Delete Stats")
-	deleteStats.LongDesc = "Delete the stats of the usage of circular"
-	deleteStats.Category = "utility"
-	p.RegisterMethod(deleteStats)
+	rpfDeleteStats := glightning.NewRpcMethod(&node.DeleteStats{}, "Delete Stats")
+	rpfDeleteStats.LongDesc = "Delete the stats of the usage of circular"
+	rpfDeleteStats.Category = "utility"
+	p.RegisterMethod(rpfDeleteStats)
 
 }
