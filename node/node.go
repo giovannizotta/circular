@@ -35,6 +35,7 @@ type Node struct {
 	Graph               *graph.Graph
 	DB                  *Store
 	LiquidityUpdateChan chan *LiquidityUpdate
+	Stopped             bool
 }
 
 func GetNode() *Node {

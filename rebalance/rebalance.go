@@ -111,6 +111,10 @@ func (r *Rebalance) Run() *Result {
 }
 
 func (r *Rebalance) runAttempt(maxHops int) (*Result, error) {
+	if r.Node.Stopped {
+		return nil, util.ErrCircularStopped
+	}
+	
 	if err := r.validateLiquidityParameters(r.OutChannel, r.InChannel); err != nil {
 		return nil, err
 	}

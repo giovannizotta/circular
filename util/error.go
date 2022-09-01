@@ -34,6 +34,7 @@ var (
 	ErrNoSuchNode                  = errors.New("no such node")
 	ErrNoPeer                      = errors.New("no peer")
 	ErrFirstPeerNotReady           = errors.New("first peer not ready")
+	ErrCircularStopped             = errors.New("circular has been stopped. Use 'circular-resume' to resume activity")
 
 	ErrNoGraphToLoad = errors.New("no graph to load")
 	ErrNoRoute       = errors.New("no route")

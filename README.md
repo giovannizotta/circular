@@ -20,6 +20,8 @@ It features a custom pathfinding algorithm that remembers liquidity information 
 * `circular-node`: Rebalance a channel by node id
 * `circular-stats`: Get stats about the usage of the plugin
 * `circular-delete-stats`: Delete stats about the usage of the plugin
+* `circular-stop`: Stop `circular` from firing new htlcs. Currently running htlcs will be completed.
+* `circular-resume`: Resume normal activity after a `circular-stop`
 
 Detailed explanation of the endpoints follows in the Usage section.
 
