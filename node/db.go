@@ -151,14 +151,6 @@ func (s *Store) ListRoutes() ([]graph.PrettyRoute, error) {
 	return result, nil
 }
 
-func (n *Node) GarbageCollect() {
-	n.Logln(glightning.Info, "Garbage collecting")
-	err := n.DB.db.RunValueLogGC(0.5)
-	if err != nil {
-		n.Logf(glightning.Unusual, "GC report: %+v", err)
-	}
-}
-
 func (n *Node) SaveToDb(key string, value any) error {
 	if !n.saveStats {
 		return nil
