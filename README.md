@@ -1,11 +1,11 @@
 # circular [![Tests](https://github.com/giovannizotta/circular/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/giovannizotta/circular/actions/workflows/tests.yml) ![GitHub](https://img.shields.io/github/license/giovannizotta/circular)
 
-`circular` is a Core Lightning plugin that helps lightning nodes rebalance their channels.
 
-It optimizes on **fees**, and it's designed to be used by routing nodes who do not need reliability in their payments and just want to rebalance their channels at the cheapest possible rate.
-It features a custom pathfinding algorithm that remembers liquidity information about the graph thanks to failed payments. Initially it doesn't know anything about the graph, but it will learn about it as it fails payments.
+`circular` is a Core Lightning plugin that helps routing nodes rebalance their channels in the most efficient way possible. 
 
-`circular` makes it easy to rebalance large amounts between your channels. Pathfinding is deterministic and straightforward. When there is a payment failure, the failing channel will be marked as unusable for that kind of amount until it is refreshed. Instead, if there is a success the information doesn't change, so if you issue the same command another time it will find the same successful route thanks to determinism in pathfinding. **Shorter routes are prioritized.**
+It features a custom pathfinding algorithm that takes into account liquidity information and failed payments in order to optimize channel rebalancing. Circular is designed to be used by routing nodes who do not need reliability in their payments, and makes it easy to rebalance large amounts between channels.
+
+> :warning: `circular` needs `allow-deprecated-apis=true` in order to run, at least until `glightning` gets brought under the CLN repo. Also, it might not be feasible to run `circular` if your device is too weak. A good test is to see how long `time lightning-cli listchannels > /dev/null` takes to run: if it takes more than 60s `circular` won't be able to start.
 
 ## Features
 * Lightweight
