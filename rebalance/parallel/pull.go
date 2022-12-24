@@ -156,8 +156,8 @@ func (r *RebalancePull) EnqueueCandidate(result *rebalance2.Result) {
 }
 
 func (r *RebalancePull) AddSuccess(result *rebalance2.Result) {
-	r.Node.Graph.LockAliases()
-	defer r.Node.Graph.UnlockAliases()
+	r.Node.Graph.RLockAliases()
+	defer r.Node.Graph.RUnlockAliases()
 	alias := "unknown"
 	if a, ok := r.Node.Graph.Aliases[result.Out]; ok {
 		alias = a

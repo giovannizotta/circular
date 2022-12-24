@@ -56,12 +56,12 @@ func (g *Graph) Unlock() {
 	g.channelsLock.Unlock()
 }
 
-func (g *Graph) LockAliases() {
-	g.aliasesLock.Lock()
+func (g *Graph) RLockAliases() {
+	g.aliasesLock.RLock()
 }
 
-func (g *Graph) UnlockAliases() {
-	g.aliasesLock.Unlock()
+func (g *Graph) RUnlockAliases() {
+	g.aliasesLock.RUnlock()
 }
 
 func allocate(links *map[string]map[string]Edge, from, to string) {
