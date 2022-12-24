@@ -66,12 +66,12 @@ func (r *AbstractRebalance) GetCandidatesList() []*glightning.Peer {
 
 func (r *AbstractRebalance) GetNextCandidate() (*graph.Channel, error) {
 	var candidate *graph.Channel
-	r.Node.Logln(glightning.Debug, "getting next candidate")
+	r.Node.Logln(glightning.Info, "getting next candidate, asking for QueueLock.")
+	r.QueueLock.Lock()
+	r.Node.Logln(glightning.Info, "getting next candidate, QueueLock acquired.")
+	defer r.QueueLock.Unlock()
 	for r.Candidates.Len() > 0 {
-
-		r.QueueLock.Lock()
 		candidate = r.Candidates.PopFront()
-		r.QueueLock.Unlock()
 		r.Node.Logln(glightning.Debug, "got candidate:", candidate.ShortChannelId)
 
 		peerChannel, err := r.Node.GetPeerChannelFromGraphChannel(candidate)
@@ -88,6 +88,7 @@ func (r *AbstractRebalance) GetNextCandidate() (*graph.Channel, error) {
 		r.Node.Logln(glightning.Debug, "channel usable")
 		return candidate, nil
 	}
+	r.Node.Logln(glightning.Info, "getting next candidate, releasing QueueLock.")
 	return nil, util.ErrNoCandidates
 }
 

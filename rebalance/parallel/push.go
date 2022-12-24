@@ -159,9 +159,12 @@ func (r *RebalancePush) EnqueueCandidate(result *rebalance2.Result) {
 		return
 	}
 
+	r.Node.Logln(glightning.Info, "asking for QueueLock.")
 	r.QueueLock.Lock()
+	r.Node.Logln(glightning.Info, "QueueLock acquired.")
+	defer r.QueueLock.Unlock()
 	r.Candidates.PushFront(candidate)
-	r.QueueLock.Unlock()
+	r.Node.Logln(glightning.Info, "releasing QueueLock.")
 }
 
 func (r *RebalancePush) AddSuccess(result *rebalance2.Result) {
