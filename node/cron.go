@@ -51,13 +51,13 @@ func (n *Node) refreshGraph() error {
 		return err
 	}
 
-	n.Logln(glightning.Debug, "refreshing channels")
+	n.Logln(glightning.Info, "refreshing channels")
 	n.Graph.RefreshChannels(channelList)
 
-	n.Logln(glightning.Debug, "pruning channels")
+	n.Logln(glightning.Info, "pruning channels")
 	n.Graph.PruneChannels()
 
-	n.Logln(glightning.Debug, "refreshing aliases")
+	n.Logln(glightning.Info, "refreshing aliases")
 	nodes, err := n.lightning.ListNodes()
 	if err != nil {
 		n.Logf(glightning.Unusual, "error listing nodes: %+v", err)
@@ -65,7 +65,7 @@ func (n *Node) refreshGraph() error {
 	}
 	n.Graph.RefreshAliases(nodes)
 
-	n.Logln(glightning.Debug, "saving graph to file")
+	n.Logln(glightning.Info, "saving graph to file")
 	if err = n.SaveGraphToFile(CIRCULAR_DIR, "graph.json"); err != nil {
 		n.Logf(glightning.Unusual, "error saving graph to file: %+v", err)
 		return err
@@ -77,7 +77,7 @@ func (n *Node) refreshGraph() error {
 
 func (n *Node) refreshPeers() error {
 	defer util.TimeTrack(time.Now(), "node.refreshPeers", n.Logf)
-	n.Logln(glightning.Debug, "refreshing peers")
+	n.Logln(glightning.Info, "refreshing peers")
 
 	peers, err := n.lightning.ListPeers()
 	if err != nil {
@@ -95,7 +95,7 @@ func (n *Node) refreshPeers() error {
 
 func (n *Node) refreshLiquidity() {
 	defer util.TimeTrack(time.Now(), "node.refreshLiquidity", n.Logf)
-	n.Logln(glightning.Debug, "refreshing liquidity")
+	n.Logln(glightning.Info, "refreshing liquidity")
 
 	hits := n.Graph.RefreshLiquidity(n.liquidityRefresh)
 	n.Logf(glightning.Info, "liquidity has been reset on %d channels", hits)
