@@ -77,8 +77,8 @@ func (r *Route) ToLightningRoute() []glightning.RouteHop {
 		hops = append(hops, glightning.RouteHop{
 			Id:             hop.Destination,
 			ShortChannelId: hop.ShortChannelId,
-			MilliSatoshi:   hop.MilliSatoshi,
-			Delay:          hop.Delay,
+			AmountMsat:     glightning.AmountFromMSat(hop.MilliSatoshi),
+			Delay:          uint32(hop.Delay),
 			Direction:      hop.GetDirection(),
 		})
 	}

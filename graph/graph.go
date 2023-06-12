@@ -3,8 +3,6 @@ package graph
 import (
 	"circular/util"
 	"github.com/elementsproject/glightning/glightning"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -78,12 +76,10 @@ func (g *Graph) AddChannel(c *Channel) {
 	g.Inbound[c.Destination][c.Source] = append(g.Inbound[c.Destination][c.Source], c.ShortChannelId)
 
 	if c.maxHtlcMsat == 0 {
-		maxHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
-		c.maxHtlcMsat = maxHtlcMsat
+		c.maxHtlcMsat = c.HtlcMaximumMilliSatoshis.MSat()
 	}
 	if c.minHtlcMsat == 0 {
-		minHtlcMsat, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMinimumMilliSatoshis, "msat"), 10, 64)
-		c.minHtlcMsat = minHtlcMsat
+		c.minHtlcMsat = c.HtlcMinimumMilliSatoshis.MSat()
 	}
 }
 
@@ -99,7 +95,7 @@ func (g *Graph) RefreshChannels(channelList []*glightning.Channel) {
 		channelId := c.ShortChannelId + "/" + util.GetDirection(c.Source, c.Destination)
 		// if the channel did not exist prior to this refresh estimate its initial liquidity to be 50/50
 		if _, ok := g.Channels[channelId]; !ok {
-			channel = NewChannel(c, uint64(0.5*float64(c.Satoshis*1000)), 0)
+			channel = NewChannel(c, uint64(0.5*float64(c.AmountMsat.MSat())), 0)
 			g.AddChannel(channel)
 		} else {
 			channel = NewChannel(c, g.Channels[channelId].Liquidity, g.Channels[channelId].Timestamp)
@@ -175,7 +171,7 @@ func (g *Graph) UpdateChannel(channelId, oppositeChannelId string, amount uint64
 
 	if _, ok := g.Channels[oppositeChannelId]; ok {
 		g.Channels[oppositeChannelId].Liquidity =
-			g.Channels[oppositeChannelId].Satoshis*1000 - amount
+			g.Channels[oppositeChannelId].AmountMsat.MSat() - amount
 		g.Channels[oppositeChannelId].Timestamp = now
 	}
 }

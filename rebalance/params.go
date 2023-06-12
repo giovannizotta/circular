@@ -35,10 +35,10 @@ func (r *Rebalance) checkConnections(inChannel, outChannel *glightning.PeerChann
 
 func (r *Rebalance) checkLiquidity(inChannel, outChannel *glightning.PeerChannel) error {
 	//validate that the amount is less than the liquidity of the channels
-	if (inChannel.MilliSatoshiTotal - inChannel.MilliSatoshiToUs) < r.Amount {
+	if (inChannel.TotalMsat.MSat() - inChannel.ToUsMsat.MSat()) < r.Amount {
 		return util.ErrIncomingChannelDepleted
 	}
-	if (outChannel.MilliSatoshiToUs) < r.Amount {
+	if (outChannel.ToUsMsat.MSat()) < r.Amount {
 		return util.ErrOutgoingChannelDepleted
 	}
 	return nil
