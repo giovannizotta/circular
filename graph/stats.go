@@ -2,7 +2,6 @@ package graph
 
 import (
 	"strconv"
-	"strings"
 )
 
 type Stats struct {
@@ -29,7 +28,7 @@ func (g *Graph) GetStats() *Stats {
 		if c.Liquidity >= 200000000 {
 			atLeast200kLiquidity++
 		}
-		maxHtlc, _ := strconv.ParseUint(strings.TrimSuffix(c.HtlcMaximumMilliSatoshis, "msat"), 10, 64)
+		maxHtlc := c.HtlcMaximumMilliSatoshis.MSat()
 		if maxHtlc >= 200000000 {
 			atLeast200kMaxHtlc++
 		}

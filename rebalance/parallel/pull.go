@@ -86,9 +86,9 @@ func (r *RebalancePull) IsGoodCandidate(peerChannel *glightning.PeerChannel) boo
 // Check that the channel is not under the deplete threshold and connection is active
 func (r *RebalancePull) CanUseChannel(channel *glightning.PeerChannel) error {
 	depleteAmount := util.Min(r.DepleteUpToAmount,
-		uint64(float64(channel.MilliSatoshiTotal)*r.DepleteUpToPercent))
+		uint64(float64(channel.TotalMsat.MSat())*r.DepleteUpToPercent))
 	r.Node.Logln(glightning.Debug, "depleteAmount:", depleteAmount)
-	if channel.MilliSatoshiToUs < depleteAmount {
+	if channel.ToUsMsat.MSat() < depleteAmount {
 		return util.ErrChannelDepleted
 	}
 

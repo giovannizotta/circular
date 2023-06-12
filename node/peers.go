@@ -104,13 +104,13 @@ func (n *Node) UpdateChannelBalance(outPeer, inPeer, outScid, inScid string, amo
 
 	for _, channel := range n.Peers[outPeer].Channels {
 		if channel.ShortChannelId == outScid {
-			channel.MilliSatoshiToUs -= amount * 1000
+			channel.ToUsMsat = glightning.AmountFromMSat(channel.ToUsMsat.MSat() - amount*1000)
 			break
 		}
 	}
 	for _, channel := range n.Peers[inPeer].Channels {
 		if channel.ShortChannelId == inScid {
-			channel.MilliSatoshiToUs += amount * 1000
+			channel.ToUsMsat = glightning.AmountFromMSat(channel.ToUsMsat.MSat() + amount*1000)
 			break
 		}
 	}

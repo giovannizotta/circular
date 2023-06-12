@@ -3,7 +3,7 @@ package node
 import (
 	"circular/graph"
 	"encoding/json"
-	badger "github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/elementsproject/glightning/glightning"
 	"log"
 	"time"
