@@ -95,9 +95,9 @@ func (r *RebalancePush) IsGoodCandidate(peerChannel *glightning.PeerChannel) boo
 func (r *RebalancePush) CanUseChannel(channel *glightning.PeerChannel) error {
 	// check that the channel is not over the fill threshold
 	fillAmount := util.Min(r.FillUpToAmount,
-		uint64(float64(channel.MilliSatoshiTotal)*r.FillUpToPercent))
+		uint64(float64(channel.TotalMsat.MSat())*r.FillUpToPercent))
 	r.Node.Logln(glightning.Debug, "fillAmount:", fillAmount)
-	if (channel.MilliSatoshiTotal - channel.MilliSatoshiToUs) < fillAmount {
+	if (channel.TotalMsat.MSat() - channel.ToUsMsat.MSat()) < fillAmount {
 		return util.ErrChannelFilled
 	}
 

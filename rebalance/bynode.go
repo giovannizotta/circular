@@ -28,14 +28,14 @@ func (r *RebalanceByNode) New() interface{} {
 
 func (r *RebalanceByNode) getBestOutgoingChannel() (*graph.Channel, error) {
 	bestScid := r.Node.GetBestPeerChannel(r.OutNode, func(channel *glightning.PeerChannel) uint64 {
-		return channel.MilliSatoshiToUs
+		return channel.ToUsMsat.MSat()
 	}).ShortChannelId
 	return r.Node.GetOutgoingChannelFromScid(bestScid)
 }
 
 func (r *RebalanceByNode) getBestIncomingChannel() (*graph.Channel, error) {
 	bestScid := r.Node.GetBestPeerChannel(r.InNode, func(channel *glightning.PeerChannel) uint64 {
-		return channel.MilliSatoshiTotal - channel.MilliSatoshiToUs
+		return channel.TotalMsat.MSat() - channel.ToUsMsat.MSat()
 	}).ShortChannelId
 	return r.Node.GetIncomingChannelFromScid(bestScid)
 }
