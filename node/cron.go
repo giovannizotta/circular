@@ -2,11 +2,12 @@ package node
 
 import (
 	"circular/util"
-	"github.com/elementsproject/glightning/glightning"
-	"github.com/robfig/cron/v3"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/elementsproject/glightning/glightning"
+	"github.com/robfig/cron/v3"
 )
 
 const (
@@ -87,8 +88,17 @@ func (n *Node) refreshPeers() error {
 
 	n.PeersLock.Lock()
 	defer n.PeersLock.Unlock()
+
 	for _, peer := range peers {
 		n.Peers[peer.Id] = peer
+
+		// since CLN 24.05 ListPeers omits channels, add them with ListPeerChannels
+		res, err := n.lightning.ListPeerChannels(peer.Id)
+		if err != nil {
+			return err
+		}
+
+		n.Peers[peer.Id].Channels = res.Channels
 	}
 	return nil
 }

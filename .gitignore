@@ -16,3 +16,7 @@ bench/*
 # Dependency directories (remove the comment below to include it)
 # vendor/
 *.idea
+.vscode/launch.json
+.vscode/tasks.json
+.gitignore
+circular
